@@ -1,0 +1,1543 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSC13114 Seminar E1 — Web Bot Auth (RFC 9421) · Bản Tiếng Việt</title>
+
+    <!-- Editorial + Swiss Typography (Google Fonts; full Vietnamese diacritic support) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ===========================================
+         CSS CUSTOM PROPERTIES (SWISS PAPER & INK LIGHT THEME)
+         =========================================== */
+      :root {
+        --stage-bg: #e7e3da;
+        --slide-bg: #faf8f4;
+        --surface-white: #ffffff;
+        --surface-warm: #f3efe6;
+        --surface-code: #f4f1ea;
+        --border-subtle: #ded9ce;
+        --border-strong: #18181b;
+
+        --ink-primary: #141413;
+        --ink-secondary: #52504c;
+        --ink-muted: #78746d;
+
+        --accent-vermilion: #c83218;
+        --accent-vermilion-soft: #fdf2ef;
+        --accent-emerald: #0d6e5b;
+        --accent-emerald-soft: #eef8f5;
+        --accent-cobalt: #1d4ed8;
+        --accent-cobalt-soft: #eff4ff;
+        --accent-amber: #b45309;
+        --accent-amber-soft: #fef7ed;
+
+        --font-display: 'Fraunces', Georgia, serif;
+        --font-kpi: 'Archivo', sans-serif;
+        --font-body: 'Plus Jakarta Sans', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+
+        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        --duration-normal: 0.55s;
+      }
+
+      /* ===========================================
+         RESET & PRINT PAGE GEOMETRY
+         =========================================== */
+      @page {
+        size: 1920px 1080px;
+        margin: 0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* ===========================================
+         FIXED 16:9 STAGE: MANDATORY BASE STYLES (viewport-base.css)
+         =========================================== */
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+        font-family: var(--font-body);
+        color: var(--ink-primary);
+      }
+
+      .deck-viewport {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+      }
+
+      .deck-stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        transform-origin: 0 0;
+        background: var(--slide-bg, #fff);
+        box-shadow: 0 24px 80px rgba(20, 20, 19, 0.14);
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        background: var(--slide-bg, #fff);
+      }
+
+      .slide.active,
+      .slide.visible {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 1;
+      }
+
+      img,
+      video,
+      canvas,
+      svg {
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      .deck-controls {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 8px 18px;
+        border-radius: 999px;
+        background: rgba(20, 20, 19, 0.86);
+        color: #faf8f4;
+        font-size: 13px;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+      }
+
+      .deck-controls button {
+        background: none;
+        border: none;
+        color: #faf8f4;
+        cursor: pointer;
+        font-family: var(--font-mono);
+        font-size: 14px;
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
+
+      .deck-controls button:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      @media print {
+        html,
+        body {
+          width: 1920px;
+          height: auto;
+          overflow: visible;
+          background: var(--slide-bg);
+        }
+
+        .deck-viewport {
+          position: static;
+          overflow: visible;
+          background: var(--slide-bg);
+        }
+
+        .deck-stage {
+          position: static;
+          width: auto;
+          height: auto;
+          transform: none !important;
+          background: none;
+          box-shadow: none;
+        }
+
+        .slide {
+          position: relative;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
+          width: 1920px;
+          height: 1080px;
+          break-after: page;
+          page-break-after: always;
+        }
+
+        .slide:last-child {
+          break-after: auto;
+          page-break-after: auto;
+        }
+
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+
+        .deck-controls,
+        .edit-hotzone,
+        .edit-toggle {
+          display: none !important;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.2s !important;
+        }
+      }
+
+      /* ===========================================
+         INLINE EDITING CONTROLS (JS-CONTROLLED)
+         =========================================== */
+      .edit-hotzone {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 80px;
+        height: 80px;
+        z-index: 10000;
+        cursor: pointer;
+      }
+
+      .edit-toggle {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        background: var(--surface-white);
+        color: var(--ink-primary);
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 10001;
+        cursor: pointer;
+      }
+
+      .edit-toggle.show,
+      .edit-toggle.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .edit-toggle.active {
+        background: var(--accent-vermilion);
+        color: #fff;
+        border-color: var(--accent-vermilion);
+      }
+
+      /* ===========================================
+         ANIMATIONS
+         =========================================== */
+      .reveal {
+        opacity: 0;
+        transform: translateY(22px);
+        transition:
+          opacity var(--duration-normal) var(--ease-out-expo),
+          transform var(--duration-normal) var(--ease-out-expo);
+      }
+
+      .slide.visible .reveal {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .reveal.d1 {
+        transition-delay: 0.06s;
+      }
+      .reveal.d2 {
+        transition-delay: 0.14s;
+      }
+      .reveal.d3 {
+        transition-delay: 0.22s;
+      }
+      .reveal.d4 {
+        transition-delay: 0.3s;
+      }
+
+      /* ===========================================
+         ARCHITECTURAL GRID & EDITORIAL LAYOUT
+         =========================================== */
+      .slide-frame {
+        width: 1920px;
+        height: 1080px;
+        padding: 56px 84px 46px 84px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        background-image:
+          radial-gradient(circle at 92% 10%, rgba(13, 110, 91, 0.055) 0%, transparent 34%),
+          radial-gradient(circle at 8% 92%, rgba(200, 50, 24, 0.045) 0%, transparent 32%);
+      }
+
+      .masthead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 18px;
+        border-bottom: 2px solid var(--ink-primary);
+      }
+
+      .masthead-left {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .slide-num-pill {
+        font-family: var(--font-kpi);
+        font-size: 20px;
+        font-weight: 800;
+        background: var(--ink-primary);
+        color: #faf8f4;
+        padding: 6px 14px;
+        border-radius: 4px;
+        letter-spacing: 0.04em;
+      }
+
+      .kicker {
+        font-family: var(--font-mono);
+        font-size: 18px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ink-secondary);
+      }
+
+      .speaker-chip {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--ink-primary);
+        background: var(--surface-warm);
+        border: 1px solid var(--border-subtle);
+        padding: 8px 20px;
+        border-radius: 999px;
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-size: 60px;
+        line-height: 1.15;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--ink-primary);
+      }
+
+      h2 {
+        font-family: var(--font-display);
+        font-size: 45px;
+        line-height: 1.18;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--ink-primary);
+        margin-bottom: 22px;
+      }
+
+      h3 {
+        font-family: var(--font-body);
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--ink-primary);
+        margin-bottom: 12px;
+      }
+
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 16px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .vermilion {
+        color: var(--accent-vermilion);
+      }
+      .emerald {
+        color: var(--accent-emerald);
+      }
+      .cobalt {
+        color: var(--accent-cobalt);
+      }
+      .amber {
+        color: var(--accent-amber);
+      }
+
+      .question-callout {
+        background: var(--surface-white);
+        border: 1.5px solid var(--border-subtle);
+        border-left: 8px solid var(--ink-primary);
+        border-radius: 10px;
+        padding: 24px 32px;
+        font-size: 27px;
+        line-height: 1.48;
+        color: var(--ink-primary);
+        box-shadow: 0 8px 28px rgba(20, 20, 19, 0.04);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+      }
+
+      .grid-asymmetric {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: 34px;
+      }
+
+      .panel {
+        background: var(--surface-white);
+        border: 1.5px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 26px 30px;
+        box-shadow: 0 6px 22px rgba(20, 20, 19, 0.035);
+      }
+
+      .panel-emerald {
+        background: var(--accent-emerald-soft);
+        border-color: rgba(13, 110, 91, 0.34);
+      }
+
+      .panel-vermilion {
+        background: var(--accent-vermilion-soft);
+        border-color: rgba(200, 50, 24, 0.34);
+      }
+
+      .panel-cobalt {
+        background: var(--accent-cobalt-soft);
+        border-color: rgba(29, 78, 216, 0.3);
+      }
+
+      .panel-amber {
+        background: var(--accent-amber-soft);
+        border-color: rgba(180, 83, 9, 0.32);
+      }
+
+      .kpi-value {
+        font-family: var(--font-kpi);
+        font-size: 52px;
+        font-weight: 800;
+        line-height: 1.06;
+        letter-spacing: -0.02em;
+        margin: 8px 0 10px 0;
+      }
+
+      .kpi-caption {
+        font-size: 21px;
+        line-height: 1.45;
+        color: var(--ink-secondary);
+      }
+
+      ul {
+        padding-left: 28px;
+      }
+
+      li {
+        font-size: 23px;
+        line-height: 1.48;
+        color: var(--ink-primary);
+        margin-bottom: 12px;
+      }
+
+      code,
+      pre {
+        font-family: var(--font-mono);
+      }
+
+      code {
+        background: var(--surface-warm);
+        border: 1px solid var(--border-subtle);
+        padding: 2px 8px;
+        border-radius: 5px;
+        font-size: 0.88em;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .code-sheet {
+        background: var(--surface-code);
+        border: 1.5px solid var(--border-subtle);
+        border-left: 6px solid var(--accent-cobalt);
+        border-radius: 10px;
+        padding: 22px 26px;
+        font-family: var(--font-mono);
+        font-size: 19px;
+        line-height: 1.52;
+        color: var(--ink-primary);
+        white-space: pre-wrap;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface-white);
+        border: 1.5px solid var(--border-subtle);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      th {
+        background: var(--surface-warm);
+        color: var(--ink-primary);
+        font-family: var(--font-mono);
+        font-size: 17px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        text-align: left;
+        padding: 13px 20px;
+        border-bottom: 2px solid var(--ink-primary);
+      }
+
+      td {
+        font-size: 21.5px;
+        line-height: 1.36;
+        padding: 13px 20px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--ink-primary);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .summary-row td {
+        background: var(--surface-warm);
+        border-top: 2px solid var(--ink-primary);
+        font-weight: 700;
+      }
+
+      .bar-group {
+        margin-top: 14px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 260px 1fr 180px;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .bar-track {
+        height: 22px;
+        background: var(--surface-warm);
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+      }
+
+      .footbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 16px;
+        border-top: 1.5px solid var(--border-subtle);
+        font-family: var(--font-mono);
+        font-size: 17px;
+        color: var(--ink-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="edit-hotzone" id="editHotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Bật/tắt sửa chữ trực tiếp (E)">
+      Sửa nội dung (E)
+    </button>
+
+    <div class="deck-viewport">
+      <main class="deck-stage" id="deckStage">
+        <!-- ===========================================
+             SLIDE 01 — TIÊU ĐỀ & CÂU HỎI NGHIÊN CỨU
+             =========================================== -->
+        <section class="slide active visible">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">01</span>
+                <span class="kicker">CSC13114 · Seminar E1 · Agents as Visitors</span>
+              </div>
+              <span class="speaker-chip">Trình bày 1 · Phạm Hữu Đan (20120450)</span>
+            </header>
+
+            <div>
+              <h1 class="reveal d1" style="margin-bottom: 22px">
+                Web Bot Auth tại Origin Server:<br />
+                <span class="emerald">Chữ ký số RFC 9421</span> so với IP + User-Agent Allowlist
+              </h1>
+
+              <div class="question-callout reveal d2" style="margin-bottom: 26px">
+                <span class="eyebrow cobalt">Câu hỏi nghiên cứu</span>
+                So với kiểm tra <code>User-Agent</code> và dải IP allowlist, việc xác thực chữ ký
+                <strong>RFC 9421 HTTP Message Signatures</strong> (<code>Ed25519</code>) chặn được
+                bao nhiêu phần trăm request bot giả mạo (<code>%</code>) trên tập tải hỗn hợp
+                <code>1,000</code> request trong khi vẫn cho qua các bot hợp lệ có ký số, và làm
+                tăng thêm bao nhiêu độ trễ xác thực <code>p95</code> (<code>ms</code>) cùng chi phí
+                CPU (<code>%</code>) trên mỗi request?
+              </div>
+
+              <div class="grid-3 reveal d3">
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Tỷ lệ chặn bot giả mạo</span>
+                  <div class="kpi-value emerald">20.0% → 100.0%</div>
+                  <p class="kpi-caption">
+                    Tăng +80.0 điểm % qua 7 lần chạy lạnh; chấp nhận 100.0% bot hợp lệ có ký số
+                  </p>
+                </div>
+                <div class="panel panel-amber">
+                  <span class="eyebrow amber">Độ trễ xác thực p95 tăng thêm</span>
+                  <div class="kpi-value amber">+0.380 ms</div>
+                  <p class="kpi-caption">
+                    0.046 ms → 0.421 ms (IQR 0.080 ms); tải JWKS lạnh: 2.822 ms (1 lần/run)
+                  </p>
+                </div>
+                <div class="panel panel-cobalt">
+                  <span class="eyebrow cobalt">Chi phí CPU &amp; băng thông</span>
+                  <div class="kpi-value cobalt">+69.7% CPU</div>
+                  <p class="kpi-caption">
+                    170.27 ms → 291.27 ms / 1k reqs (IQR 9.7%); +457 bytes header/request có ký
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Nhóm: 20120450 (Phạm Hữu Đan) · 21120595 (Nguyễn Thành Vinh) · 23120256 (Trần Đại
+                Hiệp)</span
+              >
+              <span>github.com/danhuupham/awad-web-bot-auth · Trang 01 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 02 — ĐỘNG LỰC & CƠ CHẾ GIAO THỨC
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">02</span>
+                <span class="kicker">Động lực &amp; Đặc tả Wire Format</span>
+              </div>
+              <span class="speaker-chip">Trình bày 1 · Phạm Hữu Đan (20120450)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Vì sao IP + User-Agent thất bại — và Web Bot Auth ký những gì?
+              </h2>
+
+              <div class="grid-2 reveal d2" style="margin-bottom: 24px">
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Điểm mù của Baseline</span>
+                  <h3>Kiểm tra User-Agent + dải IPv4 CIDR tĩnh</h3>
+                  <ul>
+                    <li>
+                      <code>User-Agent</code> là chuỗi văn bản trần — mọi công cụ cào dữ liệu đều
+                      giả mạo được.
+                    </li>
+                    <li>
+                      Các AI crawler &amp; agent hiện chạy trên hạ tầng cloud dùng chung dải IP
+                      (AWS, GCP, Cloudflare Workers).
+                    </li>
+                    <li>
+                      Mọi tenant thuê chung subnet <code>203.0.113.0/24</code> đều nghiễm nhiên vượt
+                      qua IP allowlist.
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Điểm thay đổi duy nhất (Change)</span>
+                  <h3>RFC 9421 + IETF Web Bot Auth (Bản nháp WG -01, 29/10/2026)</h3>
+                  <ul>
+                    <li>
+                      Bot ký số từng request bằng khóa bí mật bất đối xứng <code>Ed25519</code>.
+                    </li>
+                    <li>
+                      Header <code>Signature-Agent</code> kiểu Dictionary trỏ tới HTTPS
+                      <code>/.well-known/http-message-signatures-directory</code>.
+                    </li>
+                    <li>
+                      Origin đối chiếu chữ ký, cặp khóa <code>(URL, keyid)</code>, thời hạn &amp;
+                      <code>nonce</code>.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <pre class="code-sheet reveal d3">
+GET /articles/research-1?format=summary HTTP/1.1
+Host: 127.0.0.1:54321
+Signature-Agent: sig1="https://bot-operator.example/.well-known/http-message-signatures-directory"
+Signature-Input: sig1=("@method" "@authority" "@path" "@query" "signature-agent";key="sig1");created=1763450000;expires=1763450300;keyid="poqkLGi...";nonce="legit-0-9a...";tag="web-bot-auth"
+Signature:       sig1=:CGokAoY/FrPpyuzTe1Fb2kLTAH9Idw6qSFd1+D77r1firsMRCxeuLu5e6O+ek3zQgDMAzjiXtLVfqE00xnABCQ==:</pre>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Đặc tả gốc: IETF RFC 9421 (02/2024) + draft-ietf-webbotauth-httpsig-protocol-01
+                (29/10/2026)</span
+              >
+              <span>Trang 02 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 03 — THIẾT KẾ THỰC NGHIỆM KIỂM SOÁT
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">03</span>
+                <span class="kicker">Thiết kế thực nghiệm · Tiêu chí 1</span>
+              </div>
+              <span class="speaker-chip">Trình bày 1 · Phạm Hữu Đan (20120450)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Thiết lập kiểm soát: Giữ cố định mọi biến số trừ một Middleware
+              </h2>
+
+              <div class="grid-asymmetric reveal d2">
+                <div class="panel">
+                  <span class="eyebrow cobalt">Các yếu tố giữ cố định tuyệt đối</span>
+                  <h3>Cùng Server, kết nối TLS, tập tải &amp; trạng thái JIT</h3>
+                  <ul>
+                    <li>
+                      <strong>Phần cứng &amp; Runtime:</strong> AMD Ryzen 7 4800H (16 luồng, 31.42
+                      GB RAM), Windows 11 x64, Node.js <code>v26.13.1</code> Active LTS.
+                    </li>
+                    <li>
+                      <strong>Tiến trình Origin cô lập:</strong> Chạy trong tiến trình con riêng
+                      (<code>src/origin-worker.js</code>) qua TLS 1.3 keep-alive (<code
+                        >concurrency = 16</code
+                      >).
+                    </li>
+                    <li>
+                      <strong>Cùng 1,000 request cố định (<code>seed = 20261118</code>):</strong>
+                      300 người dùng thật, 300 bot ký hợp lệ, 400 request tấn công.
+                    </li>
+                    <li>
+                      <strong>Kỷ luật xóa cache:</strong> Làm nóng V8 JIT 1,000 req đều nhau; đảo
+                      thứ tự <code>AB / BA</code>; xóa trắng cache JWKS &amp; nonce trước mỗi lần
+                      trong <strong>7 runs</strong>.
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>5 Nhóm Tấn Công Bot (400 Reqs)</th>
+                        <th>Số lượng</th>
+                        <th>Dải IP nguồn</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>1. Giả UA từ IP bên ngoài</td>
+                        <td><strong>80</strong></td>
+                        <td><code>198.51.100.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>2. Giả UA không ký từ chung IP cloud</td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>3. Ký bằng khóa từ directory giả mạo</td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>4. Đánh tráo đường dẫn <code>@path</code></td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>5. Hết hạn (40) + Phát lại nonce (40)</td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Kiểm chứng khớp từng byte với 3 test vector chính thức Phụ lục E.2.1, E.2.2 &amp;
+                E.2.3 của IETF (npm test)</span
+              >
+              <span>Trang 03 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 04 — CHẠY LẠI PHÉP ĐO TỰ ĐỘNG
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">04</span>
+                <span class="kicker">Tái lập phép đo · Tiêu chí 2</span>
+              </div>
+              <span class="speaker-chip">Trình bày 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Một lệnh duy nhất chạy lại toàn bộ offline: <code>npm run measure</code>
+              </h2>
+              <p class="kpi-caption reveal d2" style="margin-bottom: 20px; font-size: 24px">
+                Không phụ thuộc thư viện runtime ngoài và tốn <code>$0</code> phí API. Dữ liệu thô
+                của từng lần chạy được lưu vào <code>results/run-01.json</code>–<code
+                  >run-07.json</code
+                >
+                và <code>results/summary.json</code>:
+              </p>
+
+              <pre class="code-sheet reveal d3" style="font-size: 16.5px; line-height: 1.62">
+Run 01 (baseline->change) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.055 -> 0.476 ms (+0.421 ms) | Origin CPU: 216.19 -> 343.19 ms (+58.7%)
+Run 02 (change->baseline) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.046 -> 0.408 ms (+0.362 ms) | Origin CPU: 170.27 -> 287.76 ms (+69.0%)
+Run 03 (baseline->change) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.047 -> 0.396 ms (+0.349 ms) | Origin CPU: 170.32 -> 281.87 ms (+65.5%)
+Run 04 (change->baseline) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.042 -> 0.404 ms (+0.362 ms) | Origin CPU: 163.74 -> 277.80 ms (+69.7%)
+Run 05 (baseline->change) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.040 -> 0.421 ms (+0.380 ms) | Origin CPU: 161.23 -> 291.27 ms (+80.7%)
+Run 06 (change->baseline) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.044 -> 0.507 ms (+0.463 ms) | Origin CPU: 165.45 -> 346.85 ms (+109.6%)
+Run 07 (baseline->change) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.055 -> 0.523 ms (+0.468 ms) | Origin CPU: 221.02 -> 382.88 ms (+73.2%)
+--------------------------------------------------------------------------------------------------------------------------------------------------
+SUMMARY (7 Runs Median): Spoof Reject 20.0% -> 100.0% | Verify p95 +0.380 ms (IQR 0.080 ms) | Origin CPU +69.7% (IQR 9.7%) | +457 bytes</pre>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Cổng kiểm tra CI (npm run verify:claims) tự động đối chiếu mọi con số trên slide
+                &amp; báo cáo với results/summary.json</span
+              >
+              <span>Trang 04 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 05 — KẾT QUẢ CHẶN BOT GIẢ MẠO
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">05</span>
+                <span class="kicker">Kết quả 1 · Độ chính xác bảo mật</span>
+              </div>
+              <span class="speaker-chip">Trình bày 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Tỷ lệ chặn Bot giả mạo tăng từ <span class="vermilion">20.0%</span> lên
+                <span class="emerald">100.0%</span>
+              </h2>
+
+              <div class="reveal d2">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nhóm lưu lượng / Kịch bản tấn công</th>
+                      <th>Reqs</th>
+                      <th>Baseline (UA + IP CIDR)</th>
+                      <th>Change (RFC 9421 Ed25519)</th>
+                      <th>Phản hồi HTTP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <strong>Bot hợp lệ có ký số</strong> (<code>ResearchCrawler/1.0</code>)
+                      </td>
+                      <td>300</td>
+                      <td class="emerald"><strong>100.0%</strong> cho qua (300/300)</td>
+                      <td class="emerald"><strong>100.0%</strong> cho qua (300/300)</td>
+                      <td>0 chặn nhầm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Trình duyệt người dùng thật</strong></td>
+                      <td>300</td>
+                      <td class="emerald"><strong>100.0%</strong> phục vụ (300/300)</td>
+                      <td class="emerald"><strong>100.0%</strong> phục vụ (300/300)</td>
+                      <td>Bình thường (<code>200</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>1. Giả UA từ IP ngoài (<code>198.51.100.x</code>)</td>
+                      <td>80</td>
+                      <td class="emerald"><strong>100.0%</strong> chặn (80/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> chặn (80/80)</td>
+                      <td>Cả hai chặn (<code>403</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>2. Giả UA chung dải IP cloud (<code>203.0.113.x</code>)</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> chặn (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> chặn (80/80)</td>
+                      <td><code>403</code> + <code>Accept-Signature</code></td>
+                    </tr>
+                    <tr>
+                      <td>3. Ký bằng khóa từ directory không tin cậy</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> chặn (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> chặn (80/80)</td>
+                      <td>Từ chối URL lạ (<code>403</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>4. Đánh tráo đường dẫn sau khi ký</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> chặn (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> chặn (80/80)</td>
+                      <td>Lệch <code>@path</code> / <code>@query</code> (<code>403</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>5. Chữ ký hết hạn (40) &amp; Phát lại nonce (40)</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> chặn (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> chặn (80/80)</td>
+                      <td><code>403</code> hết hạn / <code>429</code> replay</td>
+                    </tr>
+                    <tr class="summary-row">
+                      <td>Tổng tỷ lệ chặn Bot giả mạo (Trung vị 7 runs)</td>
+                      <td>400</td>
+                      <td class="vermilion">20.0% [20.0..20.0]</td>
+                      <td class="emerald">100.0% [100.0..100.0]</td>
+                      <td>+80.0 điểm % (IQR 0.0%)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Nguồn: results/summary.json · Nhất quán tuyệt đối trên cả 7 lần chạy (min = max,
+                IQR = 0.0%)</span
+              >
+              <span>Trang 05 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 06 — ĐỘ TRỄ XÁC THỰC & TẢI KHÓA JWKS
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">06</span>
+                <span class="kicker">Kết quả 2 · Độ trễ xác thực &amp; Khám phá khóa</span>
+              </div>
+              <span class="speaker-chip">Trình bày 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Chi phí độ trễ: Dưới nửa mili-giây khi ấm cache, kiểm soát tốt khi lạnh cache
+              </h2>
+
+              <div class="grid-3 reveal d2" style="margin-bottom: 24px">
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Độ trễ xác thực Bot p50</span>
+                  <div class="kpi-value emerald">0.221 ms</div>
+                  <p class="kpi-caption">
+                    so với Baseline <strong>0.017 ms</strong><br />Khoảng: [0.218..0.267] ms (IQR
+                    0.022 ms)
+                  </p>
+                </div>
+                <div class="panel panel-amber">
+                  <span class="eyebrow amber">Độ trễ xác thực Bot p95</span>
+                  <div class="kpi-value amber">0.421 ms</div>
+                  <p class="kpi-caption">
+                    so với Baseline <strong>0.046 ms</strong><br />Chênh lệch cặp:
+                    <strong>+0.380 ms</strong> [0.349..0.468]
+                  </p>
+                </div>
+                <div class="panel panel-cobalt">
+                  <span class="eyebrow cobalt">Tải JWKS lạnh (Cache Miss)</span>
+                  <div class="kpi-value cobalt">2.822 ms</div>
+                  <p class="kpi-caption">
+                    Khoảng: [2.139..4.248] ms (IQR 0.950 ms)<br />Đúng
+                    <strong>1 lần tải/run</strong>
+                    nhờ coalescing
+                  </p>
+                </div>
+              </div>
+
+              <div class="panel reveal d3">
+                <h3>So sánh độ trễ &amp; Vai trò của gộp kết nối đồng thời (Phụ lục C.3)</h3>
+                <div class="bar-group" style="margin-bottom: 14px">
+                  <div class="bar-row">
+                    <span>Baseline Verify p95</span>
+                    <div class="bar-track">
+                      <div class="bar-fill" style="width: 2%; background: var(--ink-muted)"></div>
+                    </div>
+                    <span>0.046 ms</span>
+                  </div>
+                  <div class="bar-row">
+                    <span>Web Bot Auth p95</span>
+                    <div class="bar-track">
+                      <div
+                        class="bar-fill"
+                        style="width: 15%; background: var(--accent-emerald)"
+                      ></div>
+                    </div>
+                    <span>0.421 ms</span>
+                  </div>
+                  <div class="bar-row">
+                    <span>Tải JWKS lần đầu</span>
+                    <div class="bar-track">
+                      <div
+                        class="bar-fill"
+                        style="width: 100%; background: var(--accent-cobalt)"
+                      ></div>
+                    </div>
+                    <span>2.822 ms (1 lần)</span>
+                  </div>
+                </div>
+                <p class="kpi-caption">
+                  Khi 16 kết nối đồng thời chạm cache rỗng, <code>DirectoryResolver</code> gộp chúng
+                  thành <strong>1 request HTTPS duy nhất</strong>; 299 request bot tiếp theo đọc
+                  khóa từ RAM. Độ trễ HTTPS đầu-cuối <code>p95</code> tăng từ
+                  <strong>4.600 ms</strong> lên <strong>6.043 ms</strong> (trung vị
+                  <strong>+1.794 ms</strong>).
+                </p>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Độ trễ xác thực p95 tính trên toàn bộ 1,000 request (gồm cả người dùng thường):
+                0.042 ms → 0.398 ms (+0.359 ms)</span
+              >
+              <span>Trang 06 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 07 — CHI PHÍ CPU & BĂNG THÔNG HEADER
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">07</span>
+                <span class="kicker">Kết quả 3 · Chi phí CPU &amp; Băng thông</span>
+              </div>
+              <span class="speaker-chip">Trình bày 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Chi phí tại Origin Server: Mật mã khóa bất đối xứng không miễn phí
+              </h2>
+
+              <div class="grid-3 reveal d2" style="margin-bottom: 24px">
+                <div class="panel panel-amber">
+                  <span class="eyebrow amber">Origin Active CPU (1k Reqs)</span>
+                  <div class="kpi-value amber">+69.7%</div>
+                  <p class="kpi-caption">
+                    <strong>170.27 ms → 291.27 ms</strong><br />+127.0 µs/req · Khoảng
+                    [+58.7%..+109.6%], IQR 9.7%
+                  </p>
+                </div>
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Thông lượng đỉnh trên 1 nhân</span>
+                  <div class="kpi-value vermilion">-37.0%</div>
+                  <p class="kpi-caption">
+                    <strong>5,432 → 3,422 req/s</strong><br />Đo độc lập trên tiến trình Origin qua
+                    libuv ELU
+                  </p>
+                </div>
+                <div class="panel panel-cobalt">
+                  <span class="eyebrow cobalt">Kích thước Header tăng thêm</span>
+                  <div class="kpi-value cobalt">457 bytes</div>
+                  <p class="kpi-caption">
+                    <code>Signature</code> + <code>Signature-Input</code> +
+                    <code>Signature-Agent</code> trên mỗi request có ký
+                  </p>
+                </div>
+              </div>
+
+              <div class="panel reveal d3">
+                <h3>Hai chi phí kỹ thuật quan trọng rút ra từ thực nghiệm</h3>
+                <ul>
+                  <li>
+                    <strong>Độ chênh lệch CPU trên luồng chính:</strong> Phép so bitmask CIDR chỉ
+                    mất vài nano-giây; trong khi phân tích Structured Fields + dựng chuỗi cơ sở RFC
+                    9421 + kiểm tra đường cong <code>Ed25519</code> tiêu tốn thêm
+                    <strong>127.0 µs</strong> CPU hoạt động mỗi request.
+                  </li>
+                  <li>
+                    <strong>Không nén được bằng bảng tĩnh HPACK / QPACK (Phụ lục C.7):</strong> Do
+                    chữ ký thay đổi theo từng đường dẫn và <code>nonce</code>, HTTP/2 và HTTP/3
+                    không thể tái sử dụng chỉ mục cho giá trị <code>Signature</code> — phải truyền
+                    nguyên bytes mỗi lần.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Đo bằng Node.js perf_hooks.performance.eventLoopUtilization()
+                (QueryPerformanceCounter độ phân giải nano-giây)</span
+              >
+              <span>Trang 07 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 08 — KHI NÀO KHÔNG NÊN DÙNG
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">08</span>
+                <span class="kicker">Đánh giá phản biện · Tiêu chí 3</span>
+              </div>
+              <span class="speaker-chip">Trình bày 3 · Trần Đại Hiệp (23120256)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                4 trường hợp <span class="vermilion">KHÔNG NÊN</span> bật Web Bot Auth trực tiếp tại
+                Origin
+              </h2>
+
+              <div class="grid-2 reveal d2">
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Trường hợp 01 · §5.6 &amp; §6.2</span>
+                  <h3>Tài nguyên tĩnh công khai hoặc đang chịu L7 DDoS</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    Kẻ tấn công bắn ồ ạt chữ ký <code>Ed25519</code> rác sẽ ép Origin tốn
+                    <code>~0.22 ms</code> CPU mỗi request trước khi từ chối. Hãy đẩy bước xác thực
+                    ra <strong>CDN Edge Proxy</strong> hoặc cấp session token ngắn sau request #1.
+                  </p>
+                </div>
+
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Trường hợp 02 · §5.5.2 &amp; §6.3</span>
+                  <h3>Nghiệp vụ đòi hỏi thu hồi khóa tức thì (Instant Revocation)</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    Giao thức <strong>không có kênh thu hồi khóa</strong>. Nếu lộ khóa bí mật của
+                    bot, chữ ký giả mạo vẫn tiếp tục hợp lệ cho tới khi hết
+                    <code>expires</code> hoặc hết hạn <code>max-age</code> của cache JWKS tại các
+                    server.
+                  </p>
+                </div>
+
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Trường hợp 03 · §7.1 Quyền riêng tư</span>
+                  <h3>Agent cá nhân cần ẩn danh giữa các Website</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    URL trong <code>Signature-Agent</code> làm lộ danh tính xuyên tên miền ngay cả
+                    khi đã xoay vòng khóa mới. Tuyệt đối không gắn URL định danh cá nhân cho trình
+                    duyệt agent của người dùng cuối.
+                  </p>
+                </div>
+
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Trường hợp 04 · §6.7 Bề mặt SSRF</span>
+                  <h3>Chưa triển khai bộ lọc chống SSRF khi tải khóa</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    Client tự truyền URL <code>Signature-Agent</code>. Nếu server tải thẳng mà không
+                    chặn IP nội bộ/metadata (<code>169.254.169.254</code>, <code>127.0.0.1</code>),
+                    tắt redirect và giới hạn dung lượng JWKS sẽ mở ra <strong>lỗ hổng SSRF</strong>.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Dẫn chiếu trực tiếp từ draft-ietf-webbotauth-httpsig-protocol-01 Mục 5.6, 6.2, 6.3,
+                6.7 &amp; 7.1</span
+              >
+              <span>Trang 08 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 09 — GIỚI HẠN PHÉP ĐO & KIỂM CHỨNG AI
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">09</span>
+                <span class="kicker">Giới hạn thực nghiệm &amp; Kiểm chứng AI</span>
+              </div>
+              <span class="speaker-chip">Trình bày 3 · Trần Đại Hiệp (23120256)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Giới hạn của phép đo &amp; Các lỗi kỹ thuật nhóm bắt được trong AI-LOG.md
+              </h2>
+
+              <div class="grid-2 reveal d2">
+                <div class="panel">
+                  <span class="eyebrow amber">Giới hạn của phép đo</span>
+                  <h3>Điều gì sẽ thay đổi trên môi trường Production?</h3>
+                  <ul>
+                    <li>
+                      <strong>Loopback so với mạng WAN:</strong> Tải JWKS lạnh trên
+                      <code>127.0.0.1</code> chỉ mất <strong>2.822 ms</strong>; qua mạng liên lục
+                      địa (DNS + TLS) sẽ tốn <code>50–250 ms</code> mỗi lần lệch cache.
+                    </li>
+                    <li>
+                      <strong>Bộ nhớ Nonce cục bộ:</strong> Cụm nhiều server Origin cần Redis để
+                      chống phát lại nguyên tử, cộng thêm <code>~0.3–1.5 ms</code> RTT mạng nội bộ.
+                    </li>
+                    <li>
+                      <strong>Phạm vi GET + Ed25519:</strong> Thuật toán
+                      <code>rsa-pss-sha512</code> tốn CPU hơn, và <code>POST</code> cần băm body qua
+                      RFC 9530 <code>Content-Digest</code>.
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Tiêu chí 6 · Kiểm chứng kết quả AI</span>
+                  <h3>Các lỗi thực tế nhóm phát hiện &amp; sửa lại</h3>
+                  <ul>
+                    <li>
+                      <strong>Cập nhật bản nháp tháng 10/2026:</strong> Bác bỏ cú pháp chuỗi trần cũ
+                      của <code>Signature-Agent</code>, chuyển sang kiểu Dictionary chuẩn WG Draft
+                      <code>-01</code>.
+                    </li>
+                    <li>
+                      <strong>Nhiễu nhịp 15.625 ms trên Windows:</strong> Phát hiện
+                      <code>process.cpuUsage()</code> bị làm tròn theo xung nhịp
+                      <code>1/64 s</code> (nhảy <code>[0%..118%]</code>); đổi sang
+                      <code>eventLoopUtilization()</code> (IQR còn <code>9.7%</code>).
+                    </li>
+                    <li>
+                      <strong>Chống đánh tráo đường dẫn &amp; thư viện cũ:</strong> Bắt buộc ký đủ
+                      <code>@method</code> + <code>@path</code> + <code>@query</code> và nâng cấp
+                      ESLint 9 / Actions v4 lên ESLint 10 &amp; v7.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >10 bài test tự động kiểm tra RFC 7638 thumbprint, IETF vectors E.2.1–E.2.3, SSRF
+                &amp; cô lập cache (URL, keyid)</span
+              >
+              <span>Trang 09 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 10 — KHUYẾN NGHỊ CUỐI CÙNG & NGUỒN TRÍCH DẪN
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">10</span>
+                <span class="kicker">Kết luận &amp; Nguồn chính thống</span>
+              </div>
+              <span class="speaker-chip">Trình bày 3 · Trần Đại Hiệp (23120256)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Khuyến nghị: Bật Web Bot Auth tại nơi danh tính mở khóa đặc quyền
+              </h2>
+
+              <div class="reveal d2" style="margin-bottom: 24px">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Bối cảnh triển khai</th>
+                      <th>Chính sách khuyến nghị</th>
+                      <th>Cấu hình kỹ thuật cốt lõi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>AI Crawler / API đối tác trên dải IP Cloud</strong></td>
+                      <td class="emerald"><strong>Dùng Web Bot Auth (Ed25519)</strong></td>
+                      <td>
+                        Ký đủ <code>@method</code>, <code>@authority</code>, <code>@path</code>,
+                        <code>@query</code>; <code>expires ≤ 300s</code>; cache JWKS có chặn SSRF
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Origin tải cao (&gt; 5,000 req/s) / L7 DDoS</strong></td>
+                      <td class="amber"><strong>Xác thực tại CDN Edge + Session</strong></td>
+                      <td>
+                        Tách gánh nặng <code>+69.7%</code> CPU khỏi Origin; đổi request hợp lệ đầu
+                        tiên lấy session token ngắn hạn
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Tài nguyên tĩnh / Trang công khai phổ thông</strong></td>
+                      <td class="cobalt"><strong>Giữ không ký + Rate Limit</strong></td>
+                      <td>
+                        Tránh tốn <code>+0.380 ms</code> độ trễ p95 &amp; <code>457 bytes</code>
+                        header khi danh tính bot không thay đổi quyền truy cập
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="panel reveal d3" style="padding: 22px 28px">
+                <span class="eyebrow cobalt"
+                  >Nguồn tài liệu chính thống (Đã kiểm chứng ngày 2026-11-18)</span
+                >
+                <p class="kpi-caption" style="font-size: 20px; color: var(--ink-primary)">
+                  [1] IETF <strong>RFC 9421</strong> (<em>HTTP Message Signatures</em>, Proposed
+                  Standard, 02/2024) · [2] IETF <code>webbotauth</code> WG
+                  <strong><code>draft-ietf-webbotauth-httpsig-protocol-01</code></strong>
+                  (29/10/2026, hết hạn 05/2027) · [3] IETF <strong>RFC 9651</strong> (09/2024),
+                  <strong>RFC 7638</strong> &amp; <strong>RFC 8037</strong> · [4] Cloudflare
+                  <code>web-bot-auth@0.2.0</code> &amp; tài liệu Node.js <code>v26.13.1</code>
+                  Active LTS.
+                </p>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Cảm ơn thầy và các bạn! · Chạy lại trong 10 giây: git clone
+                https://github.com/danhuupham/awad-web-bot-auth &amp;&amp; npm run measure</span
+              >
+              <span>Trang 10 / 10</span>
+            </footer>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <nav class="deck-controls" aria-label="Điều khiển slide">
+      <button id="prevBtn" type="button" aria-label="Trang trước">← Trước</button>
+      <span id="slideCounter">01 / 10</span>
+      <button id="nextBtn" type="button" aria-label="Trang tiếp">Tiếp →</button>
+    </nav>
+
+    <script>
+      class SlidePresentation {
+        constructor() {
+          this.slides = Array.from(document.querySelectorAll('.slide'));
+          this.currentSlide = 0;
+          this.stage = document.getElementById('deckStage');
+          this.counter = document.getElementById('slideCounter');
+          this.editActive = false;
+          this.wheelLocked = false;
+
+          this.setupStageScale();
+          this.setupKeyboardNav();
+          this.setupPointerNav();
+          this.setupInlineEditor();
+          this.showSlide(0);
+        }
+
+        setupStageScale() {
+          const scale = () => {
+            const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * factor) / 2;
+            const y = (window.innerHeight - 1080 * factor) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+          };
+          scale();
+          window.addEventListener('resize', scale);
+        }
+
+        showSlide(index) {
+          this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+          this.slides.forEach((slide, i) => {
+            const isCurrent = i === this.currentSlide;
+            slide.classList.toggle('active', isCurrent);
+            slide.classList.toggle('visible', isCurrent);
+          });
+          if (this.counter) {
+            const cur = String(this.currentSlide + 1).padStart(2, '0');
+            const tot = String(this.slides.length).padStart(2, '0');
+            this.counter.textContent = `${cur} / ${tot}`;
+          }
+        }
+
+        setupKeyboardNav() {
+          document.addEventListener('keydown', (e) => {
+            if (e.target && e.target.isContentEditable) return;
+            if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+              e.preventDefault();
+              this.showSlide(this.currentSlide + 1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+              e.preventDefault();
+              this.showSlide(this.currentSlide - 1);
+            } else if (e.key === 'Home') {
+              e.preventDefault();
+              this.showSlide(0);
+            } else if (e.key === 'End') {
+              e.preventDefault();
+              this.showSlide(this.slides.length - 1);
+            } else if (e.key === 'e' || e.key === 'E') {
+              this.toggleEditMode();
+            }
+          });
+        }
+
+        setupPointerNav() {
+          document.getElementById('prevBtn')?.addEventListener('click', () => {
+            this.showSlide(this.currentSlide - 1);
+          });
+          document.getElementById('nextBtn')?.addEventListener('click', () => {
+            this.showSlide(this.currentSlide + 1);
+          });
+
+          window.addEventListener(
+            'wheel',
+            (e) => {
+              if (this.editActive || this.wheelLocked || Math.abs(e.deltaY) < 24) return;
+              this.wheelLocked = true;
+              this.showSlide(this.currentSlide + (e.deltaY > 0 ? 1 : -1));
+              setTimeout(() => {
+                this.wheelLocked = false;
+              }, 420);
+            },
+            { passive: true }
+          );
+
+          let touchStartX = 0;
+          window.addEventListener(
+            'touchstart',
+            (e) => {
+              touchStartX = e.changedTouches[0].screenX;
+            },
+            { passive: true }
+          );
+          window.addEventListener(
+            'touchend',
+            (e) => {
+              const dx = e.changedTouches[0].screenX - touchStartX;
+              if (Math.abs(dx) > 50) {
+                this.showSlide(this.currentSlide + (dx < 0 ? 1 : -1));
+              }
+            },
+            { passive: true }
+          );
+        }
+
+        setupInlineEditor() {
+          const hotzone = document.getElementById('editHotzone');
+          const toggle = document.getElementById('editToggle');
+          let hideTimer = null;
+
+          const showBtn = () => {
+            clearTimeout(hideTimer);
+            toggle.classList.add('show');
+          };
+          const scheduleHide = () => {
+            hideTimer = setTimeout(() => {
+              if (!this.editActive) toggle.classList.remove('show');
+            }, 400);
+          };
+
+          hotzone.addEventListener('mouseenter', showBtn);
+          hotzone.addEventListener('mouseleave', scheduleHide);
+          hotzone.addEventListener('click', () => this.toggleEditMode());
+          toggle.addEventListener('mouseenter', showBtn);
+          toggle.addEventListener('mouseleave', scheduleHide);
+          toggle.addEventListener('click', () => this.toggleEditMode());
+        }
+
+        toggleEditMode() {
+          this.editActive = !this.editActive;
+          const toggle = document.getElementById('editToggle');
+          toggle.classList.toggle('active', this.editActive);
+          toggle.classList.toggle('show', this.editActive);
+          document.querySelectorAll('h1, h2, h3, p, li, td, th').forEach((el) => {
+            el.contentEditable = this.editActive ? 'true' : 'false';
+          });
+        }
+      }
+
+      new SlidePresentation();
+    </script>
+  </body>
+</html>

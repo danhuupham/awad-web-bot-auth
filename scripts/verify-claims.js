@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url));
 const SUMMARY_PATH = path.join(ROOT_DIR, 'results', 'summary.json');
 const REPORT_PATH = path.join(ROOT_DIR, 'REPORT.md');
-const SLIDES_HTML_PATH = path.join(ROOT_DIR, 'slides', 'slides.html');
+const SLIDES_EN_PATH = path.join(ROOT_DIR, 'slides', 'slides.html');
+const SLIDES_VI_PATH = path.join(ROOT_DIR, 'slides', 'slides-vi.html');
 
 const summary = JSON.parse(fs.readFileSync(SUMMARY_PATH, 'utf8'));
 assert.ok(summary.environment.runs >= 5, 'Expected at least 5 recorded runs in summary.json');
@@ -17,7 +18,8 @@ for (let r = 1; r <= summary.environment.runs; r += 1) {
 }
 
 const reportText = fs.readFileSync(REPORT_PATH, 'utf8');
-const slidesText = fs.readFileSync(SLIDES_HTML_PATH, 'utf8');
+const slidesEnText = fs.readFileSync(SLIDES_EN_PATH, 'utf8');
+const slidesViText = fs.readFileSync(SLIDES_VI_PATH, 'utf8');
 
 const expectedTokens = [
   `${summary.baseline.spoofedBotRejectionRatePct.median.toFixed(1)}%`,
@@ -38,8 +40,12 @@ for (const token of expectedTokens) {
     `REPORT.md is missing logged metric "${token}" from results/summary.json`
   );
   assert.ok(
-    slidesText.includes(token),
+    slidesEnText.includes(token),
     `slides/slides.html is missing logged metric "${token}" from results/summary.json`
+  );
+  assert.ok(
+    slidesViText.includes(token),
+    `slides/slides-vi.html is missing logged metric "${token}" from results/summary.json`
   );
 }
 
@@ -51,5 +57,5 @@ assert.match(
 );
 
 console.log(
-  `Claims verification passed: all ${expectedTokens.length} headline metrics in REPORT.md and slides match results/summary.json (${summary.environment.runs} raw logs verified).`
+  `Claims verification passed: all ${expectedTokens.length} headline metrics in REPORT.md, slides.html, and slides-vi.html match results/summary.json (${summary.environment.runs} raw logs verified).`
 );

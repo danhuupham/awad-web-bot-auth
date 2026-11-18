@@ -56,7 +56,7 @@ _(Because runtime `dependencies` are empty, `npm test` and `npm run measure` can
 ## Key Deliverable Files
 
 - [`REPORT.md`](REPORT.md) — Short study report (≤ 3 pages) answering the research question with setup, numbers, trade-offs, limits, and primary IETF/Node.js sources.
-- [`slides.pdf`](slides.pdf) — 10-slide presentation deck rendered from [`slides/slides.html`](slides/slides.html).
+- [`slides.pdf`](slides.pdf) & [`slides-vi.pdf`](slides-vi.pdf) — 10-slide 16:9 presentation decks in English ([`slides/slides.html`](slides/slides.html)) and Vietnamese ([`slides/slides-vi.html`](slides/slides-vi.html)).
 - [`TALK.md`](TALK.md) — Recorded presentation link and 3-member speaking breakdown.
 - [`AI-LOG.md`](AI-LOG.md) — Transparent log of assistant usage, rejected drafts, and technical errors caught by the team.
 - [`SELF_ASSESSMENT_REPORT.md`](SELF_ASSESSMENT_REPORT.md) — Criterion-by-criterion self-assessment with file and log evidence.
