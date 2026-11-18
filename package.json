@@ -1,0 +1,18 @@
+{
+  "name": "awad-web-bot-auth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CSC13114 Seminar (E1) — A measured look at Web Bot Auth (RFC 9421 HTTP Message Signatures vs. User-Agent + IP Allowlists)",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "measure": "node scripts/measure.js",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
+    "verify:claims": "node scripts/verify-claims.js",
+    "scan": "node scripts/scan-secrets.js",
+    "build:slides": "node scripts/build-slides.js",
+    "check": "npm test && npm run scan && npm run verify:claims"
+  }
+}

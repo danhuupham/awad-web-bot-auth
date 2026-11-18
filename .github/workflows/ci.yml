@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify-and-measure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run unit, IETF test vector, security guard, and integration tests
+        run: npm test
+
+      - name: Scan working tree and git history for secrets/keys
+        run: npm run scan
+
+      - name: Verify REPORT.md and slide numbers match committed results/summary.json
+        run: npm run verify:claims
+
+      - name: Smoke-test reproducible measurement command (5 runs)
+        run: node scripts/measure.js --runs=5
