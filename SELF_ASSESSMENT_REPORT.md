@@ -1,0 +1,27 @@
+# Self-assessment — SEMINAR (E1: Web Bot Auth — RFC 9421 HTTP Message Signatures)
+
+Submitted by:
+- `20120450` — Phạm Hữu Đan
+- `21120595` — Nguyễn Thành Vinh
+- `23120256` — Trần Đại Hiệp
+
+Course: CSC13114 — Advanced Web Application Development (CQ2023/3)  
+Repository: [`https://github.com/danhuupham/awad-web-bot-auth`](https://github.com/danhuupham/awad-web-bot-auth)
+
+**Total we claim: 94 / 100**
+
+| Criterion | Max | We claim | Evidence |
+| --- | --- | --- | --- |
+| **1. The question and the baseline** | 15 | 15 | [`REPORT.md`](REPORT.md) §1 states one concrete question naming the single change (RFC 9421 `Ed25519` HTTP Message Signature verification replacing `User-Agent` + IP allowlist), primary metric (`%` spoofed bot requests rejected & `%` valid bots accepted), and cost metrics (`p95` verification latency in `ms` and CPU overhead in `%`). [`REPORT.md`](REPORT.md) §2–§3 and [`src/origin-server.js`](src/origin-server.js) hold machine, TLS 1.3 transport, keep-alive pool (`concurrency = 16`), 1,000-request seeded workload (`seed = 20261118` in [`src/workload.js`](src/workload.js)), V8 JIT warm-up (`1,000` reqs), alternating `AB/BA` run order, and per-run cache resets strictly fixed, swapping only `createBaselineIpUaVerifier()` vs. `createWebBotAuthVerifier()`. |
+| **2. The measurement re-runs** | 30 | 29 | [`README.md`](README.md) §*From a Fresh Clone to `npm run measure`* gives exact zero-dependency steps (`git clone`, `npm test`, `npm run measure`) requiring zero API keys or external services. [`scripts/measure.js`](scripts/measure.js) executes **7 runs**, writing raw JSON logs to [`results/run-01.json`](results/run-01.json)–[`results/run-07.json`](results/run-07.json), aggregated medians/IQRs/min–max to [`results/summary.json`](results/summary.json), and stdout logs to [`results/measure-log.txt`](results/measure-log.txt). [`scripts/verify-claims.js`](scripts/verify-claims.js) (`npm run verify:claims` in CI) verifies every headline number in `REPORT.md` and `slides.pdf` traces to `results/summary.json`. |
+| **3. Findings and recommendation** | 20 | 19 | [`REPORT.md`](REPORT.md) §4–§6 and [`slides.pdf`](slides.pdf) Slides 5–10 quantify security gains (`20.0%` → `100.0%` spoofed-bot rejection across 5 attack vectors) alongside concrete costs (`+0.380 ms` `p95` bot-verify latency, `2.822 ms` cold JWKS fetch, `+69.7%` / `+127.0 µs/req` origin active CPU, `-37.0%` single-core peak throughput, and `+457 bytes` HPACK-incompressible headers per signed request), four cases when **not** to use Web Bot Auth at the origin (L7 DDoS CPU asymmetry, zero instant key revocation, cross-origin privacy correlation, and SSRF without fetch guards), and three measurement limits (loopback RTT vs. WAN discovery, single-process nonce map vs. Redis, `GET` + `Ed25519` scope). |
+| **4. The talk** | 15 | 12 | [`slides.pdf`](slides.pdf) (10 slides, readable typography) and [`TALK.md`](TALK.md) open with the research question (`00:00–00:45`, Slide 1), demonstrate `npm test && npm run measure` and its logs (`02:30–03:20`, Slide 4), present headline numbers with units and 7-run spread (`03:20–05:30`, Slides 5–7), and close with when-not-to-use and recommendations (`05:30–07:40`, Slides 8–10), with all three members (`20120450`, `21120595`, `23120256`) presenting an equal section. *(Update link in `TALK.md` once video upload finishes.)* |
+| **5. Sources and facts** | 10 | 10 | [`REPORT.md`](REPORT.md) §7 cites 9 primary official specifications/docs with exact statuses, versions, publication dates, and access date (`2026-11-18`): IETF RFC 9421 (Proposed Standard, Feb 2024), active IETF WG draft `draft-ietf-webbotauth-httpsig-protocol-01` (published 29 Oct 2026, expires 2 May 2027), RFC 9651 (Sep 2024), RFC 7517, RFC 7638, RFC 8037 Appendix A.3, RFC 9530, `cloudflare/web-bot-auth@0.2.0`, and Node.js `node:crypto` / `node:perf_hooks` docs. [`test/ietf-vectors.test.js`](test/ietf-vectors.test.js) verifies cryptographic compliance against official IETF test vectors E.2.1–E.2.3. |
+| **6. `AI-LOG.md`** | 10 | 9 | [`AI-LOG.md`](AI-LOG.md) contains 4 task-level entries (`Entry 1`–`Entry 4`) with concrete `Kept`, `Changed`, `Rejected`, and `By hand` records, documenting three real technical errors caught and corrected: (1) outdated bare-string `Signature-Agent` and superseded `draft-meunier-*` names vs. the `2026-10-29` WG draft `-01` Dictionary `Signature-Agent`; (2) Windows `15.625 ms` `GetProcessTimes` tick quantization in `process.cpuUsage()` (`[0.0%..118.0%]` noise) replaced by isolated-worker `performance.eventLoopUtilization()` (`9.7%` IQR); and (3) cross-path replay risk of `@authority`-only signatures. |
+
+---
+
+## What we did not manage
+
+- **Loopback TLS vs. cross-region WAN directory latency:** To keep `npm run measure` 100% deterministic, self-contained, and runnable offline by the red team (`Only your own systems`), our trusted and rogue JWKS directories run over `127.0.0.1` TLS 1.3 (`2.822 ms` median cold fetch) rather than across geographically separated cloud regions where DNS + TLS cold-cache discovery adds `50–250 ms`.
+- **Single-node in-memory nonce replay map & `GET`-only `Ed25519` scope:** Our verifier stores seen `(URL, keyid, nonce)` tuples in an in-process bounded `Map` rather than a multi-replica Redis store, and benchmarks `GET` requests signed with `Ed25519` rather than `POST` bodies covered by RFC 9530 `Content-Digest` or `rsa-pss-sha512` keys.
