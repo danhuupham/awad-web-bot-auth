@@ -1,417 +1,881 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CSC13114 Seminar E1 — Web Bot Auth (RFC 9421)</title>
+
+    <!-- Editorial + Swiss Typography (Google Fonts; full Vietnamese diacritic support) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
+      /* ===========================================
+         CSS CUSTOM PROPERTIES (SWISS PAPER & INK LIGHT THEME)
+         =========================================== */
+      :root {
+        --stage-bg: #e7e3da;
+        --slide-bg: #faf8f4;
+        --surface-white: #ffffff;
+        --surface-warm: #f3efe6;
+        --surface-code: #f4f1ea;
+        --border-subtle: #ded9ce;
+        --border-strong: #18181b;
+
+        --ink-primary: #141413;
+        --ink-secondary: #52504c;
+        --ink-muted: #78746d;
+
+        --accent-vermilion: #c83218;
+        --accent-vermilion-soft: #fdf2ef;
+        --accent-emerald: #0d6e5b;
+        --accent-emerald-soft: #eef8f5;
+        --accent-cobalt: #1d4ed8;
+        --accent-cobalt-soft: #eff4ff;
+        --accent-amber: #b45309;
+        --accent-amber-soft: #fef7ed;
+
+        --font-display: 'Fraunces', Georgia, serif;
+        --font-kpi: 'Archivo', sans-serif;
+        --font-body: 'Plus Jakarta Sans', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+
+        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        --duration-normal: 0.55s;
+      }
+
+      /* ===========================================
+         RESET & PRINT PAGE GEOMETRY
+         =========================================== */
       @page {
-        size: 1280px 720px;
+        size: 1920px 1080px;
         margin: 0;
       }
+
       * {
-        box-sizing: border-box;
         margin: 0;
         padding: 0;
+        box-sizing: border-box;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+
+      /* ===========================================
+         FIXED 16:9 STAGE: MANDATORY BASE STYLES (viewport-base.css)
+         =========================================== */
+      html,
       body {
-        font-family:
-          'Segoe UI',
-          Inter,
-          -apple-system,
-          BlinkMacSystemFont,
-          sans-serif;
-        background: #0f172a;
-        color: #f8fafc;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+        font-family: var(--font-body);
+        color: var(--ink-primary);
       }
+
+      .deck-viewport {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #000);
+      }
+
+      .deck-stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        transform-origin: 0 0;
+        background: var(--slide-bg, #fff);
+        box-shadow: 0 24px 80px rgba(20, 20, 19, 0.14);
+      }
+
       .slide {
-        width: 1280px;
-        height: 720px;
-        padding: 36px 54px 30px 54px;
-        background: linear-gradient(145deg, #0b1120 0%, #111827 65%, #0f172a 100%);
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        background: var(--slide-bg, #fff);
+      }
+
+      .slide.active,
+      .slide.visible {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 1;
+      }
+
+      img,
+      video,
+      canvas,
+      svg {
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      .deck-controls {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 8px 18px;
+        border-radius: 999px;
+        background: rgba(20, 20, 19, 0.86);
+        color: #faf8f4;
+        font-size: 13px;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+      }
+
+      .deck-controls button {
+        background: none;
+        border: none;
+        color: #faf8f4;
+        cursor: pointer;
+        font-family: var(--font-mono);
+        font-size: 14px;
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
+
+      .deck-controls button:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      @media print {
+        html,
+        body {
+          width: 1920px;
+          height: auto;
+          overflow: visible;
+          background: var(--slide-bg);
+        }
+
+        .deck-viewport {
+          position: static;
+          overflow: visible;
+          background: var(--slide-bg);
+        }
+
+        .deck-stage {
+          position: static;
+          width: auto;
+          height: auto;
+          transform: none !important;
+          background: none;
+          box-shadow: none;
+        }
+
+        .slide {
+          position: relative;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
+          width: 1920px;
+          height: 1080px;
+          break-after: page;
+          page-break-after: always;
+        }
+
+        .slide:last-child {
+          break-after: auto;
+          page-break-after: auto;
+        }
+
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+
+        .deck-controls,
+        .edit-hotzone,
+        .edit-toggle {
+          display: none !important;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.2s !important;
+        }
+      }
+
+      /* ===========================================
+         INLINE EDITING CONTROLS (JS-CONTROLLED)
+         =========================================== */
+      .edit-hotzone {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 80px;
+        height: 80px;
+        z-index: 10000;
+        cursor: pointer;
+      }
+
+      .edit-toggle {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        background: var(--surface-white);
+        color: var(--ink-primary);
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 700;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 10001;
+        cursor: pointer;
+      }
+
+      .edit-toggle.show,
+      .edit-toggle.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .edit-toggle.active {
+        background: var(--accent-vermilion);
+        color: #fff;
+        border-color: var(--accent-vermilion);
+      }
+
+      /* ===========================================
+         ANIMATIONS
+         =========================================== */
+      .reveal {
+        opacity: 0;
+        transform: translateY(22px);
+        transition:
+          opacity var(--duration-normal) var(--ease-out-expo),
+          transform var(--duration-normal) var(--ease-out-expo);
+      }
+
+      .slide.visible .reveal {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .reveal.d1 {
+        transition-delay: 0.06s;
+      }
+      .reveal.d2 {
+        transition-delay: 0.14s;
+      }
+      .reveal.d3 {
+        transition-delay: 0.22s;
+      }
+      .reveal.d4 {
+        transition-delay: 0.3s;
+      }
+
+      /* ===========================================
+         ARCHITECTURAL GRID & EDITORIAL LAYOUT
+         =========================================== */
+      .slide-frame {
+        width: 1920px;
+        height: 1080px;
+        padding: 58px 84px 48px 84px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        page-break-after: always;
-        break-after: page;
         position: relative;
-        overflow: hidden;
+        background-image:
+          radial-gradient(circle at 92% 10%, rgba(13, 110, 91, 0.055) 0%, transparent 34%),
+          radial-gradient(circle at 8% 92%, rgba(200, 50, 24, 0.045) 0%, transparent 32%);
       }
-      .slide:last-child {
-        page-break-after: auto;
-        break-after: auto;
-      }
-      .topbar {
+
+      /* Top Swiss index bar */
+      .masthead {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.22);
-        padding-bottom: 14px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--ink-primary);
       }
-      .badge {
-        display: inline-block;
-        padding: 5px 12px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 700;
+
+      .masthead-left {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .slide-num-pill {
+        font-family: var(--font-kpi);
+        font-size: 20px;
+        font-weight: 800;
+        background: var(--ink-primary);
+        color: #faf8f4;
+        padding: 6px 14px;
+        border-radius: 4px;
         letter-spacing: 0.04em;
-        text-transform: uppercase;
-        background: rgba(56, 189, 248, 0.16);
-        color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.35);
       }
-      .speaker {
-        font-size: 15px;
-        color: #cbd5e1;
+
+      .kicker {
+        font-family: var(--font-mono);
+        font-size: 18px;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-secondary);
       }
-      h1 {
-        font-size: 42px;
-        line-height: 1.16;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: -0.02em;
-      }
-      h2 {
-        font-size: 32px;
-        line-height: 1.2;
-        font-weight: 800;
-        color: #f8fafc;
-        margin-bottom: 14px;
-      }
-      h3 {
+
+      .speaker-chip {
         font-size: 20px;
         font-weight: 700;
-        color: #38bdf8;
+        color: var(--ink-primary);
+        background: var(--surface-warm);
+        border: 1px solid var(--border-subtle);
+        padding: 8px 20px;
+        border-radius: 999px;
+      }
+
+      /* Typography */
+      h1 {
+        font-family: var(--font-display);
+        font-size: 66px;
+        line-height: 1.09;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        color: var(--ink-primary);
+      }
+
+      h2 {
+        font-family: var(--font-display);
+        font-size: 48px;
+        line-height: 1.14;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--ink-primary);
+        margin-bottom: 22px;
+      }
+
+      h3 {
+        font-family: var(--font-body);
+        font-size: 25px;
+        font-weight: 700;
+        color: var(--ink-primary);
+        margin-bottom: 12px;
+      }
+
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 16px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
         margin-bottom: 8px;
+        display: block;
       }
-      .question-box {
-        background: rgba(15, 23, 42, 0.85);
-        border-left: 5px solid #38bdf8;
-        border-top: 1px solid rgba(56, 189, 248, 0.28);
-        border-right: 1px solid rgba(56, 189, 248, 0.28);
-        border-bottom: 1px solid rgba(56, 189, 248, 0.28);
-        border-radius: 12px;
-        padding: 22px 26px;
-        font-size: 23px;
-        line-height: 1.42;
-        color: #e2e8f0;
+
+      .vermilion {
+        color: var(--accent-vermilion);
       }
+      .emerald {
+        color: var(--accent-emerald);
+      }
+      .cobalt {
+        color: var(--accent-cobalt);
+      }
+      .amber {
+        color: var(--accent-amber);
+      }
+
+      /* Question Callout */
+      .question-callout {
+        background: var(--surface-white);
+        border: 1.5px solid var(--border-subtle);
+        border-left: 8px solid var(--ink-primary);
+        border-radius: 10px;
+        padding: 26px 34px;
+        font-size: 29px;
+        line-height: 1.44;
+        color: var(--ink-primary);
+        box-shadow: 0 8px 28px rgba(20, 20, 19, 0.04);
+      }
+
+      /* Grid Helpers */
       .grid-2 {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 24px;
+        gap: 32px;
       }
+
       .grid-3 {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
+        gap: 28px;
       }
-      .card {
-        background: rgba(30, 41, 59, 0.68);
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        border-radius: 14px;
-        padding: 20px 22px;
+
+      .grid-asymmetric {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: 34px;
       }
-      .card-accent {
-        border-color: rgba(52, 211, 153, 0.45);
-        background: rgba(6, 78, 59, 0.25);
+
+      /* Cards */
+      .panel {
+        background: var(--surface-white);
+        border: 1.5px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 28px 32px;
+        box-shadow: 0 6px 22px rgba(20, 20, 19, 0.035);
       }
-      .card-warn {
-        border-color: rgba(248, 113, 113, 0.45);
-        background: rgba(127, 29, 29, 0.22);
+
+      .panel-emerald {
+        background: var(--accent-emerald-soft);
+        border-color: rgba(13, 110, 91, 0.34);
       }
-      .big-num {
-        font-size: 46px;
+
+      .panel-vermilion {
+        background: var(--accent-vermilion-soft);
+        border-color: rgba(200, 50, 24, 0.34);
+      }
+
+      .panel-cobalt {
+        background: var(--accent-cobalt-soft);
+        border-color: rgba(29, 78, 216, 0.3);
+      }
+
+      .panel-amber {
+        background: var(--accent-amber-soft);
+        border-color: rgba(180, 83, 9, 0.32);
+      }
+
+      /* Big KPI Numbers */
+      .kpi-value {
+        font-family: var(--font-kpi);
+        font-size: 52px;
         font-weight: 800;
-        line-height: 1.05;
-        margin: 8px 0 6px 0;
+        line-height: 1.06;
+        letter-spacing: -0.02em;
+        margin: 8px 0 10px 0;
       }
-      .green {
-        color: #34d399;
+
+      .kpi-caption {
+        font-size: 21px;
+        line-height: 1.42;
+        color: var(--ink-secondary);
       }
-      .amber {
-        color: #fbbf24;
-      }
-      .red {
-        color: #f87171;
-      }
-      .blue {
-        color: #38bdf8;
-      }
-      .muted {
-        color: #94a3b8;
-        font-size: 16px;
-        line-height: 1.4;
-      }
+
+      /* Lists */
       ul {
-        padding-left: 22px;
+        padding-left: 28px;
       }
+
       li {
-        font-size: 19px;
-        line-height: 1.44;
-        color: #e2e8f0;
-        margin-bottom: 8px;
+        font-size: 24px;
+        line-height: 1.46;
+        color: var(--ink-primary);
+        margin-bottom: 12px;
       }
+
+      li strong {
+        color: var(--ink-primary);
+      }
+
+      /* Inline Code & Editorial Code Blocks */
       code,
       pre {
-        font-family: 'Cascadia Code', Consolas, 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
       }
+
       code {
-        background: rgba(15, 23, 42, 0.9);
-        padding: 2px 6px;
+        background: var(--surface-warm);
+        border: 1px solid var(--border-subtle);
+        padding: 2px 8px;
         border-radius: 5px;
-        color: #7dd3fc;
-        font-size: 0.92em;
+        font-size: 0.88em;
+        font-weight: 600;
+        color: #1e293b;
       }
-      pre {
-        background: #020617;
-        border: 1px solid rgba(148, 163, 184, 0.28);
-        border-radius: 12px;
-        padding: 16px 18px;
-        font-size: 14.5px;
-        line-height: 1.42;
-        color: #e2e8f0;
+
+      .code-sheet {
+        background: var(--surface-code);
+        border: 1.5px solid var(--border-subtle);
+        border-left: 6px solid var(--accent-cobalt);
+        border-radius: 10px;
+        padding: 22px 26px;
+        font-family: var(--font-mono);
+        font-size: 19px;
+        line-height: 1.52;
+        color: var(--ink-primary);
         white-space: pre-wrap;
       }
+
+      /* Tables */
       table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 18px;
+        background: var(--surface-white);
+        border: 1.5px solid var(--border-subtle);
+        border-radius: 10px;
+        overflow: hidden;
       }
-      th,
-      td {
-        padding: 10px 14px;
-        text-align: left;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-      }
+
       th {
-        color: #94a3b8;
-        font-size: 15px;
+        background: var(--surface-warm);
+        color: var(--ink-primary);
+        font-family: var(--font-mono);
+        font-size: 18px;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        background: rgba(15, 23, 42, 0.7);
+        text-align: left;
+        padding: 14px 20px;
+        border-bottom: 2px solid var(--ink-primary);
       }
-      .footer {
+
+      td {
+        font-size: 22px;
+        line-height: 1.35;
+        padding: 13px 20px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--ink-primary);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .summary-row td {
+        background: var(--surface-warm);
+        border-top: 2px solid var(--ink-primary);
+        font-weight: 700;
+      }
+
+      /* Data Bar Visualizers */
+      .bar-group {
+        margin-top: 14px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 230px 1fr 165px;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .bar-track {
+        height: 22px;
+        background: var(--surface-warm);
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+      }
+
+      /* Footer */
+      .footbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 14px;
-        color: #94a3b8;
-        border-top: 1px solid rgba(148, 163, 184, 0.16);
-        padding-top: 10px;
+        padding-top: 16px;
+        border-top: 1.5px solid var(--border-subtle);
+        font-family: var(--font-mono);
+        font-size: 17px;
+        color: var(--ink-muted);
       }
     </style>
   </head>
   <body>
-    <!-- SLIDE 1 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">CSC13114 · Seminar E1 · Agents as Visitors</span>
-        <span class="speaker">Speaker 1: Phạm Hữu Đan (20120450)</span>
-      </div>
-      <div>
-        <h1 style="margin-bottom: 14px; font-size: 38px">
-          Web Bot Auth at the Origin:<br />
-          <span class="blue">RFC 9421 HTTP Message Signatures</span> vs. IP + User-Agent Allowlists
-        </h1>
-        <div class="question-box" style="padding: 16px 22px; font-size: 21px">
-          <strong style="color: #38bdf8">Research Question:</strong><br />
-          Compared with <code>User-Agent</code> and IP allowlist checks, what percentage of spoofed
-          bot requests (<code>%</code>) does
-          <strong>RFC 9421 HTTP Message Signature</strong> verification (<code>Ed25519</code>)
-          reject on a <code>1,000</code>-request mixed workload while accepting valid signed bots,
-          and how much <code>p95</code> verification latency (<code>ms</code>) and CPU overhead
-          (<code>%</code>) does it add per request?
-        </div>
-        <div class="grid-3" style="margin-top: 16px">
-          <div class="card" style="padding: 16px 18px">
-            <h3>Headline Security Gain</h3>
-            <div class="big-num green" style="font-size: 38px">20.0% → 100.0%</div>
-            <p class="muted">
-              Spoofed bot rejection (+80.0 pp) across 7 cold-reset runs; 100.0% valid bots accepted
-            </p>
-          </div>
-          <div class="card" style="padding: 16px 18px">
-            <h3>p95 Verify Latency Cost</h3>
-            <div class="big-num amber" style="font-size: 38px">+0.380 ms</div>
-            <p class="muted">
-              0.046 ms → 0.421 ms (IQR 0.080 ms); cold JWKS fetch: 2.822 ms once per run
-            </p>
-          </div>
-          <div class="card" style="padding: 16px 18px">
-            <h3>Origin CPU &amp; Wire Cost</h3>
-            <div class="big-num blue" style="font-size: 38px">+69.7% CPU</div>
-            <p class="muted">
-              170.27 ms → 291.27 ms / 1k reqs (IQR 9.7%); +457 bytes headers/signed req
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="footer">
-        <span
-          >Team: 20120450 (Phạm Hữu Đan) · 21120595 (Nguyễn Thành Vinh) · 23120256 (Trần Đại
-          Hiệp)</span
-        >
-        <span>Repo: github.com/danhuupham/awad-web-bot-auth · Slide 1 / 10</span>
-      </div>
-    </section>
+    <!-- Inline Edit Affordance -->
+    <div class="edit-hotzone" id="editHotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Toggle inline text edit (E)">
+      Edit Slide Text (E)
+    </button>
 
-    <!-- SLIDE 2 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Background &amp; Protocol Mechanics</span>
-        <span class="speaker">Speaker 1: Phạm Hữu Đan (20120450)</span>
-      </div>
-      <div>
-        <h2>Why IP + User-Agent Allowlists Break — and What Web Bot Auth Changes</h2>
-        <div class="grid-2" style="margin-bottom: 18px">
-          <div class="card card-warn">
-            <h3 style="color: #f87171">Baseline: User-Agent + IPv4 CIDR Allowlist</h3>
-            <ul>
-              <li>
-                <code>User-Agent</code> is an unauthenticated plain-text header trivial to spoof.
-              </li>
-              <li>
-                AI agents &amp; crawlers run on shared cloud egress CIDRs (AWS, GCP, Workers).
-              </li>
-              <li>
-                Any co-hosted tenant in <code>203.0.113.0/24</code> inherits trusted-bot access.
-              </li>
-            </ul>
+    <div class="deck-viewport">
+      <main class="deck-stage" id="deckStage">
+        <!-- ===========================================
+             SLIDE 01 — TITLE & RESEARCH QUESTION
+             =========================================== -->
+        <section class="slide active visible">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">01</span>
+                <span class="kicker">CSC13114 · Seminar E1 · Agents as Visitors</span>
+              </div>
+              <span class="speaker-chip">Speaker 1 · Phạm Hữu Đan (20120450)</span>
+            </header>
+
+            <div>
+              <h1 class="reveal d1" style="margin-bottom: 24px">
+                Web Bot Auth at the Origin:<br />
+                <span class="emerald">RFC 9421 HTTP Message Signatures</span> vs. IP + User-Agent
+              </h1>
+
+              <div class="question-callout reveal d2" style="margin-bottom: 28px">
+                <span class="eyebrow cobalt">Research Question</span>
+                Compared with <code>User-Agent</code> and IP allowlist checks, what percentage of
+                spoofed bot requests (<code>%</code>) does
+                <strong>RFC 9421 HTTP Message Signature</strong> verification (<code>Ed25519</code>)
+                reject on a <code>1,000</code>-request mixed workload while accepting valid signed
+                bots, and how much <code>p95</code> verification latency (<code>ms</code>) and CPU
+                overhead (<code>%</code>) does it add per request?
+              </div>
+
+              <div class="grid-3 reveal d3">
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Spoofed Bot Rejection</span>
+                  <div class="kpi-value emerald">20.0% → 100.0%</div>
+                  <p class="kpi-caption">
+                    +80.0 pp gain across 7 cold-reset runs; 100.0% valid signed bots accepted
+                  </p>
+                </div>
+                <div class="panel panel-amber">
+                  <span class="eyebrow amber">p95 Verify Latency Cost</span>
+                  <div class="kpi-value amber">+0.380 ms</div>
+                  <p class="kpi-caption">
+                    0.046 ms → 0.421 ms (IQR 0.080 ms); cold JWKS fetch: 2.822 ms once/run
+                  </p>
+                </div>
+                <div class="panel panel-cobalt">
+                  <span class="eyebrow cobalt">Origin Active CPU &amp; Wire</span>
+                  <div class="kpi-value cobalt">+69.7% CPU</div>
+                  <p class="kpi-caption">
+                    170.27 ms → 291.27 ms / 1k reqs (IQR 9.7%); +457 bytes headers/signed req
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Team: 20120450 (Phạm Hữu Đan) · 21120595 (Nguyễn Thành Vinh) · 23120256 (Trần Đại
+                Hiệp)</span
+              >
+              <span>github.com/danhuupham/awad-web-bot-auth · Slide 01 / 10</span>
+            </footer>
           </div>
-          <div class="card card-accent">
-            <h3 style="color: #34d399">
-              Change: RFC 9421 + IETF Web Bot Auth (Oct 2026 Draft -01)
-            </h3>
-            <ul>
-              <li>Bot signs per-request components with private <code>Ed25519</code> key.</li>
-              <li>
-                <code>Signature-Agent</code> Dictionary header points to HTTPS JWKS directory.
-              </li>
-              <li>
-                Origin verifies signature, <code>(URL, keyid)</code> binding, window &amp;
-                <code>nonce</code>.
-              </li>
-            </ul>
-          </div>
-        </div>
-        <pre>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 02 — PROTOCOL MOTIVATION & WIRE FORMAT
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">02</span>
+                <span class="kicker">Motivation &amp; Wire Protocol</span>
+              </div>
+              <span class="speaker-chip">Speaker 1 · Phạm Hữu Đan (20120450)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Why IP + User-Agent Allowlists Break — and What Web Bot Auth Signs
+              </h2>
+
+              <div class="grid-2 reveal d2" style="margin-bottom: 26px">
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Baseline Failure Mode</span>
+                  <h3>User-Agent + Static IPv4 CIDR Allowlist</h3>
+                  <ul>
+                    <li>
+                      <code>User-Agent</code> is plain text — trivial for any scraper to copy.
+                    </li>
+                    <li>
+                      Modern AI agents &amp; crawlers run on shared cloud egress subnets (AWS, GCP,
+                      Cloudflare Workers).
+                    </li>
+                    <li>
+                      Every co-hosted tenant inside <code>203.0.113.0/24</code> inherits trusted
+                      crawler privileges.
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Single Change Under Study</span>
+                  <h3>RFC 9421 + IETF Web Bot Auth (29 Oct 2026 WG Draft -01)</h3>
+                  <ul>
+                    <li>Bot signs each request with its private <code>Ed25519</code> key.</li>
+                    <li>
+                      Dictionary <code>Signature-Agent</code> points to HTTPS
+                      <code>/.well-known/http-message-signatures-directory</code>.
+                    </li>
+                    <li>
+                      Origin verifies signature, <code>(URL, keyid)</code> binding, window &amp;
+                      <code>nonce</code>.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <pre class="code-sheet reveal d3">
 GET /articles/research-1?format=summary HTTP/1.1
 Host: 127.0.0.1:54321
 Signature-Agent: sig1="https://bot-operator.example/.well-known/http-message-signatures-directory"
 Signature-Input: sig1=("@method" "@authority" "@path" "@query" "signature-agent";key="sig1");created=1763450000;expires=1763450300;keyid="poqkLGi...";nonce="legit-0-9a...";tag="web-bot-auth"
 Signature:       sig1=:CGokAoY/FrPpyuzTe1Fb2kLTAH9Idw6qSFd1+D77r1firsMRCxeuLu5e6O+ek3zQgDMAzjiXtLVfqE00xnABCQ==:</pre>
-      </div>
-      <div class="footer">
-        <span
-          >Specs: IETF RFC 9421 (Feb 2024) + draft-ietf-webbotauth-httpsig-protocol-01 (29 Oct
-          2026)</span
-        >
-        <span>Slide 2 / 10</span>
-      </div>
-    </section>
+            </div>
 
-    <!-- SLIDE 3 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Experimental Design · Criterion 1</span>
-        <span class="speaker">Speaker 1: Phạm Hữu Đan (20120450)</span>
-      </div>
-      <div>
-        <h2>Controlled Setup: Holding Everything Fixed Except One Middleware</h2>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Held Strictly Fixed Across Baseline &amp; Change</h3>
-            <ul>
-              <li>
-                <strong>Machine &amp; Runtime:</strong> Ryzen 7 4800H (16 cores, 31.42 GB RAM),
-                Windows 11 x64, Node.js <code>v26.13.1</code> (zero external packages).
-              </li>
-              <li>
-                <strong>Isolated Origin Worker:</strong> Separate OS process
-                (<code>src/origin-worker.js</code>) over TLS 1.3 keep-alive (<code
-                  >concurrency = 16</code
-                >).
-              </li>
-              <li>
-                <strong>Same 1,000-Request Workload (<code>seed = 20261118</code>):</strong> 300
-                human browsers, 300 valid signed bots, 400 spoofed/tampered bots.
-              </li>
-              <li>
-                <strong>Warm-Up &amp; Reset Discipline:</strong> Equal 1,000-req V8 JIT warm-up;
-                alternating <code>AB / BA</code> order; full JWKS &amp; nonce wipe before each of
-                the <strong>7 runs</strong>.
-              </li>
-            </ul>
+            <footer class="footbar">
+              <span
+                >Normative specs: IETF RFC 9421 (Feb 2024) +
+                draft-ietf-webbotauth-httpsig-protocol-01 (29 Oct 2026)</span
+              >
+              <span>Slide 02 / 10</span>
+            </footer>
           </div>
-          <div class="card">
-            <h3>5 Adversarial Bot Classes (80 reqs each = 400)</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Attack Vector</th>
-                  <th>Reqs</th>
-                  <th>Originating IP</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>1. Forged UA from external IP</td>
-                  <td>80</td>
-                  <td><code>198.51.100.x</code></td>
-                </tr>
-                <tr>
-                  <td>2. Forged UA on shared cloud IP</td>
-                  <td>80</td>
-                  <td><code>203.0.113.x</code></td>
-                </tr>
-                <tr>
-                  <td>3. Rogue directory Ed25519 key</td>
-                  <td>80</td>
-                  <td><code>203.0.113.x</code></td>
-                </tr>
-                <tr>
-                  <td>4. Tampered <code>@path</code> / <code>@query</code></td>
-                  <td>80</td>
-                  <td><code>203.0.113.x</code></td>
-                </tr>
-                <tr>
-                  <td>5. Expired (40) + Replayed nonce (40)</td>
-                  <td>80</td>
-                  <td><code>203.0.113.x</code></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="footer">
-        <span
-          >Byte-for-byte verified against IETF Appendix E.2.1, E.2.2 &amp; E.2.3 vectors (npm
-          test)</span
-        >
-        <span>Slide 3 / 10</span>
-      </div>
-    </section>
+        </section>
 
-    <!-- SLIDE 4 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Reproducible Benchmark · Criterion 2</span>
-        <span class="speaker">Speaker 2: Nguyễn Thành Vinh (21120595)</span>
-      </div>
-      <div>
-        <h2>One Command Re-Runs Everything: <code>npm run measure</code></h2>
-        <p class="muted" style="margin-bottom: 12px; font-size: 18px">
-          Fresh clone → <code>npm test</code> (10 protocol &amp; security tests) →
-          <code>npm run measure</code> (writes <code>results/run-01.json</code>..<code
-            >run-07.json</code
-          >
-          &amp; <code>summary.json</code>):
-        </p>
-        <pre style="font-size: 12.6px; line-height: 1.55">
+        <!-- ===========================================
+             SLIDE 03 — CONTROLLED EXPERIMENTAL SETUP
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">03</span>
+                <span class="kicker">Experimental Design · Criterion 1</span>
+              </div>
+              <span class="speaker-chip">Speaker 1 · Phạm Hữu Đan (20120450)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Controlled Setup: Holding Everything Fixed Except One Middleware
+              </h2>
+
+              <div class="grid-asymmetric reveal d2">
+                <div class="panel">
+                  <span class="eyebrow cobalt">Invariants Held Fixed</span>
+                  <h3>Identical Server, Transport, Workload &amp; JIT State</h3>
+                  <ul>
+                    <li>
+                      <strong>Machine &amp; Runtime:</strong> AMD Ryzen 7 4800H (16 cores, 31.42 GB
+                      RAM), Windows 11 x64, Node.js <code>v26.13.1</code> Active LTS.
+                    </li>
+                    <li>
+                      <strong>Isolated Origin Process:</strong> Dedicated child worker
+                      (<code>src/origin-worker.js</code>) over TLS 1.3 keep-alive (<code
+                        >concurrency = 16</code
+                      >).
+                    </li>
+                    <li>
+                      <strong>Seeded 1,000-Request Mix (<code>seed = 20261118</code>):</strong> 300
+                      human browsers, 300 valid signed bots, 400 adversarial requests.
+                    </li>
+                    <li>
+                      <strong>Cold-Cache Discipline:</strong> Equal 1,000-req V8 JIT warm-up;
+                      alternating <code>AB / BA</code> order; full JWKS &amp; nonce wipe before each
+                      of the <strong>7 runs</strong>.
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Adversarial Slice (400 Reqs)</th>
+                        <th>Reqs</th>
+                        <th>Source CIDR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>1. Forged UA from external IP</td>
+                        <td><strong>80</strong></td>
+                        <td><code>198.51.100.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>2. Unsigned forged UA on cloud IP</td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>3. Rogue directory Ed25519 key</td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>4. Cross-path tampered <code>@path</code></td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                      <tr>
+                        <td>5. Expired (40) + Nonce replay (40)</td>
+                        <td><strong>80</strong></td>
+                        <td><code>203.0.113.x</code></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Byte-for-byte verified against official IETF Appendix E.2.1, E.2.2 &amp; E.2.3
+                vectors (npm test)</span
+              >
+              <span>Slide 03 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 04 — RE-RUNNING THE MEASUREMENT
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">04</span>
+                <span class="kicker">Reproducible Benchmark · Criterion 2</span>
+              </div>
+              <span class="speaker-chip">Speaker 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                One Command Re-Runs Everything Offline: <code>npm run measure</code>
+              </h2>
+              <p class="kpi-caption reveal d2" style="margin-bottom: 20px; font-size: 24px">
+                Zero external runtime packages and zero paid API keys. Every run writes raw JSON to
+                <code>results/run-01.json</code>–<code>run-07.json</code> and
+                <code>results/summary.json</code>:
+              </p>
+
+              <pre class="code-sheet reveal d3" style="font-size: 16.5px; line-height: 1.62">
 Run 01 (baseline->change) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.055 -> 0.476 ms (+0.421 ms) | Origin CPU: 216.19 -> 343.19 ms (+58.7%)
 Run 02 (change->baseline) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.046 -> 0.408 ms (+0.362 ms) | Origin CPU: 170.27 -> 287.76 ms (+69.0%)
 Run 03 (baseline->change) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.047 -> 0.396 ms (+0.349 ms) | Origin CPU: 170.32 -> 281.87 ms (+65.5%)
@@ -421,415 +885,669 @@ Run 06 (change->baseline) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.04
 Run 07 (baseline->change) | Spoof Reject: 20.0% -> 100.0% | Bot Verify p95: 0.055 -> 0.523 ms (+0.468 ms) | Origin CPU: 221.02 -> 382.88 ms (+73.2%)
 --------------------------------------------------------------------------------------------------------------------------------------------------
 SUMMARY (7 Runs Median): Spoof Reject 20.0% -> 100.0% | Verify p95 +0.380 ms (IQR 0.080 ms) | Origin CPU +69.7% (IQR 9.7%) | +457 bytes</pre>
-      </div>
-      <div class="footer">
-        <span
-          >Automated log audit: npm run verify:claims checks every slide &amp; report number against
-          results/summary.json</span
-        >
-        <span>Slide 4 / 10</span>
-      </div>
-    </section>
+            </div>
 
-    <!-- SLIDE 5 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Finding 1 · Spoofed Bot Rejection</span>
-        <span class="speaker">Speaker 2: Nguyễn Thành Vinh (21120595)</span>
-      </div>
-      <div>
-        <h2>Security Accuracy: 20.0% → 100.0% Spoofed Bot Rejection</h2>
-        <table style="font-size: 16.5px">
-          <thead>
-            <tr>
-              <th style="padding: 8px 12px">Traffic Slice / Attack Vector</th>
-              <th style="padding: 8px 12px">Reqs</th>
-              <th style="padding: 8px 12px">Baseline (UA + IP CIDR)</th>
-              <th style="padding: 8px 12px">Change (RFC 9421 Ed25519)</th>
-              <th style="padding: 8px 12px">Outcome</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding: 8px 12px">
-                <strong>Valid Signed Bot</strong> (<code>ResearchCrawler/1.0</code>)
-              </td>
-              <td style="padding: 8px 12px">300</td>
-              <td style="padding: 8px 12px" class="green">
-                <strong>100.0%</strong> accepted (300/300)
-              </td>
-              <td style="padding: 8px 12px" class="green">
-                <strong>100.0%</strong> accepted (300/300)
-              </td>
-              <td style="padding: 8px 12px">0 false blocks</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px"><strong>Human Browser Requests</strong></td>
-              <td style="padding: 8px 12px">300</td>
-              <td style="padding: 8px 12px" class="green">
-                <strong>100.0%</strong> served (300/300)
-              </td>
-              <td style="padding: 8px 12px" class="green">
-                <strong>100.0%</strong> served (300/300)
-              </td>
-              <td style="padding: 8px 12px">Unimpeded</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px">1. External IP UA Spoof (<code>198.51.100.x</code>)</td>
-              <td style="padding: 8px 12px">80</td>
-              <td style="padding: 8px 12px" class="green">100.0% rejected (80/80)</td>
-              <td style="padding: 8px 12px" class="green">100.0% rejected (80/80)</td>
-              <td style="padding: 8px 12px">Both block (<code>403</code>)</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px">
-                2. Shared Cloud IP UA Spoof (<code>203.0.113.x</code>)
-              </td>
-              <td style="padding: 8px 12px">80</td>
-              <td style="padding: 8px 12px" class="red">0.0% rejected (0/80)</td>
-              <td style="padding: 8px 12px" class="green">100.0% rejected (80/80)</td>
-              <td style="padding: 8px 12px"><code>403</code> + <code>Accept-Signature</code></td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px">3. Rogue Key Directory Signature</td>
-              <td style="padding: 8px 12px">80</td>
-              <td style="padding: 8px 12px" class="red">0.0% rejected (0/80)</td>
-              <td style="padding: 8px 12px" class="green">100.0% rejected (80/80)</td>
-              <td style="padding: 8px 12px">Untrusted directory (<code>403</code>)</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px">4. Cross-Path Tampered Signature</td>
-              <td style="padding: 8px 12px">80</td>
-              <td style="padding: 8px 12px" class="red">0.0% rejected (0/80)</td>
-              <td style="padding: 8px 12px" class="green">100.0% rejected (80/80)</td>
-              <td style="padding: 8px 12px">
-                <code>@path</code> / <code>@query</code> mismatch (<code>403</code>)
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px">5. Expired Window (40) &amp; Nonce Replay (40)</td>
-              <td style="padding: 8px 12px">80</td>
-              <td style="padding: 8px 12px" class="red">0.0% rejected (0/80)</td>
-              <td style="padding: 8px 12px" class="green">100.0% rejected (80/80)</td>
-              <td style="padding: 8px 12px"><code>403</code> expired / <code>429</code> replay</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px">
-                <strong>Total Spoofed Bot Rejection (7-Run Median)</strong>
-              </td>
-              <td style="padding: 8px 12px"><strong>400</strong></td>
-              <td style="padding: 8px 12px" class="red"><strong>20.0% [20.0..20.0]</strong></td>
-              <td style="padding: 8px 12px" class="green">
-                <strong>100.0% [100.0..100.0]</strong>
-              </td>
-              <td style="padding: 8px 12px"><strong>+80.0 pp gain</strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="footer">
-        <span>Source: results/summary.json · Spread across all 7 runs: IQR = 0.0%</span>
-        <span>Slide 5 / 10</span>
-      </div>
-    </section>
+            <footer class="footbar">
+              <span
+                >CI quality gate (npm run verify:claims) asserts every slide &amp; report metric
+                against results/summary.json</span
+              >
+              <span>Slide 04 / 10</span>
+            </footer>
+          </div>
+        </section>
 
-    <!-- SLIDE 6 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Finding 2 · Latency &amp; Key Discovery</span>
-        <span class="speaker">Speaker 2: Nguyễn Thành Vinh (21120595)</span>
-      </div>
-      <div>
-        <h2>Latency Cost: Sub-Millisecond Steady State, Bounded Cold Discovery</h2>
-        <div class="grid-3" style="margin-bottom: 22px">
-          <div class="card">
-            <h3>Bot Verify p50 Latency</h3>
-            <div class="big-num green">0.221 ms</div>
-            <p class="muted">
-              vs. Baseline <strong>0.017 ms</strong><br />Spread: [0.218..0.267] ms (IQR 0.022 ms)
-            </p>
-          </div>
-          <div class="card">
-            <h3>Bot Verify p95 Latency</h3>
-            <div class="big-num amber">0.421 ms</div>
-            <p class="muted">
-              vs. Baseline <strong>0.046 ms</strong><br />Pairwise delta:
-              <strong>+0.380 ms</strong> [0.349..0.468]
-            </p>
-          </div>
-          <div class="card">
-            <h3>Cold JWKS Fetch (Cache Miss)</h3>
-            <div class="big-num blue">2.822 ms</div>
-            <p class="muted">
-              Spread: [2.139..4.248] ms (IQR 0.950 ms)<br /><strong>1 fetch/run</strong> via
-              in-flight coalescing
-            </p>
-          </div>
-        </div>
-        <div class="card">
-          <h3>Why Request Coalescing Matters on Cold Start (Appendix C.3)</h3>
-          <ul>
-            <li>
-              At the start of every run, <strong>16 concurrent sockets</strong> arrive against an
-              empty JWKS cache.
-            </li>
-            <li>
-              Without coalescing, all 16 requests would trigger redundant HTTPS directory fetches (a
-              self-inflicted burst).
-            </li>
-            <li>
-              With in-flight promise coalescing (<code>DirectoryResolver</code>), exactly
-              <strong>1 directory fetch</strong> occurs per run and the remaining
-              <strong>299 valid bot requests</strong> hit local RAM cache in <code>~0.22 ms</code>;
-              end-to-end HTTPS <code>p95</code> rises from <strong>4.600 ms</strong> to
-              <strong>6.043 ms</strong> (<strong>+1.794 ms</strong> median delta).
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer">
-        <span
-          >All-request verify p95 (n = 1,000 incl. humans): 0.042 ms → 0.398 ms (+0.359 ms)</span
-        >
-        <span>Slide 6 / 10</span>
-      </div>
-    </section>
+        <!-- ===========================================
+             SLIDE 05 — SPOOFED BOT REJECTION BREAKDOWN
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">05</span>
+                <span class="kicker">Finding 1 · Spoofed Bot Rejection</span>
+              </div>
+              <span class="speaker-chip">Speaker 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
 
-    <!-- SLIDE 7 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Finding 3 · CPU &amp; Bandwidth Cost</span>
-        <span class="speaker">Speaker 2: Nguyễn Thành Vinh (21120595)</span>
-      </div>
-      <div>
-        <h2>Origin CPU &amp; Wire Overhead: Asymmetric Crypto Is Not Free</h2>
-        <div class="grid-3" style="margin-bottom: 22px">
-          <div class="card">
-            <h3>Origin Active CPU (1k reqs)</h3>
-            <div class="big-num amber">+69.7%</div>
-            <p class="muted">
-              <strong>170.27 ms → 291.27 ms</strong><br />+127.0 µs/req · Spread: [+58.7%..+109.6%],
-              IQR 9.7%
-            </p>
-          </div>
-          <div class="card">
-            <h3>Single-Core Peak Throughput</h3>
-            <div class="big-num red">-37.0%</div>
-            <p class="muted">
-              <strong>5,432 → 3,422 req/s</strong><br />Measured in isolated child worker via libuv
-              ELU
-            </p>
-          </div>
-          <div class="card">
-            <h3>Signed Header Wire Size</h3>
-            <div class="big-num blue">457 bytes</div>
-            <p class="muted">
-              <code>Signature</code> + <code>Signature-Input</code> +
-              <code>Signature-Agent</code> per signed request
-            </p>
-          </div>
-        </div>
-        <div class="card">
-          <h3>Two Subtle Costs Highlighted by Our Measurements</h3>
-          <ul>
-            <li>
-              <strong>CPU Asymmetry:</strong> Bitmask CIDR lookup takes nanoseconds; parsing
-              Structured Fields + computing RFC 9421 base + <code>Ed25519</code> curve verification
-              adds <strong>127.0 µs</strong> of main-thread active CPU per request across the mixed
-              workload.
-            </li>
-            <li>
-              <strong>HPACK / QPACK Incompressibility (Appendix C.7):</strong> Because per-request
-              signatures change on every URL and <code>nonce</code>, HTTP/2 and HTTP/3 header tables
-              cannot index the <code>Signature</code> value — literal bytes are paid on every
-              request.
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer">
-        <span
-          >Measured via Node.js perf_hooks.performance.eventLoopUtilization() (nanosecond
-          QueryPerformanceCounter)</span
-        >
-        <span>Slide 7 / 10</span>
-      </div>
-    </section>
+            <div>
+              <h2 class="reveal d1">
+                Security Accuracy: <span class="vermilion">20.0%</span> →
+                <span class="emerald">100.0%</span> Spoofed Bot Rejection
+              </h2>
 
-    <!-- SLIDE 8 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Critical Evaluation · Criterion 3</span>
-        <span class="speaker">Speaker 3: Trần Đại Hiệp (23120256)</span>
-      </div>
-      <div>
-        <h2>When <span class="red">NOT</span> to Use Web Bot Auth Directly at Your Origin</h2>
-        <div class="grid-2">
-          <div class="card card-warn">
-            <h3 style="color: #f87171">1. Unthrottled L7 DDoS / Static Assets</h3>
-            <p style="font-size: 18px; line-height: 1.45">
-              Attackers sending garbage <code>Ed25519</code> signatures force your origin to spend
-              <code>~0.22 ms</code> CPU per hit before rejecting. For public static assets or
-              high-RPS origins, verify at an <strong>edge CDN proxy</strong> or mint a session token
-              after request #1 (§5.6, §6.2).
-            </p>
-          </div>
-          <div class="card card-warn">
-            <h3 style="color: #f87171">2. Instant Key Revocation Requirements</h3>
-            <p style="font-size: 18px; line-height: 1.45">
-              The protocol defines <strong>zero revocation mechanism</strong> (§5.5.2, §6.3). If a
-              bot's private key leaks, stolen signatures verify until <code>expires</code> or until
-              every verifier's cached JWKS <code>max-age</code> TTL expires.
-            </p>
-          </div>
-          <div class="card card-warn">
-            <h3 style="color: #f87171">3. Privacy-Sensitive Personal Agents</h3>
-            <p style="font-size: 18px; line-height: 1.45">
-              <code>Signature-Agent</code> URLs identify the signer across origins even across key
-              rotations (§7.1). Never attach a user-specific <code>Signature-Agent</code> URL to
-              personal browsing agents.
-            </p>
-          </div>
-          <div class="card card-warn">
-            <h3 style="color: #f87171">4. Without SSRF Guards on Key Discovery</h3>
-            <p style="font-size: 18px; line-height: 1.45">
-              Clients control <code>Signature-Agent</code>. Fetching arbitrary URLs without blocking
-              private IPs (<code>169.254.169.254</code>, <code>127.0.0.1</code>), redirects, and
-              oversized payloads turns bot auth into an <strong>SSRF vulnerability</strong> (§6.7).
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="footer">
-        <span
-          >All 4 limits grounded in draft-ietf-webbotauth-httpsig-protocol-01 Sections 5.6, 6.2,
-          6.3, 6.7 &amp; 7.1</span
-        >
-        <span>Slide 8 / 10</span>
-      </div>
-    </section>
+              <div class="reveal d2">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Traffic Slice / Attack Vector</th>
+                      <th>Reqs</th>
+                      <th>Baseline (UA + IP CIDR)</th>
+                      <th>Change (RFC 9421 Ed25519)</th>
+                      <th>HTTP Outcome</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Valid Signed Bot</strong> (<code>ResearchCrawler/1.0</code>)</td>
+                      <td>300</td>
+                      <td class="emerald"><strong>100.0%</strong> accepted (300/300)</td>
+                      <td class="emerald"><strong>100.0%</strong> accepted (300/300)</td>
+                      <td>0 false blocks</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Human Browser Traffic</strong></td>
+                      <td>300</td>
+                      <td class="emerald"><strong>100.0%</strong> served (300/300)</td>
+                      <td class="emerald"><strong>100.0%</strong> served (300/300)</td>
+                      <td>Unimpeded (<code>200</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>1. External IP UA Spoof (<code>198.51.100.x</code>)</td>
+                      <td>80</td>
+                      <td class="emerald"><strong>100.0%</strong> rejected (80/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> rejected (80/80)</td>
+                      <td>Both block (<code>403</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>2. Shared Cloud IP UA Spoof (<code>203.0.113.x</code>)</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> rejected (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> rejected (80/80)</td>
+                      <td><code>403</code> + <code>Accept-Signature</code></td>
+                    </tr>
+                    <tr>
+                      <td>3. Rogue Directory Ed25519 Signature</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> rejected (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> rejected (80/80)</td>
+                      <td>Untrusted URL (<code>403</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>4. Cross-Path Tampered Signature</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> rejected (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> rejected (80/80)</td>
+                      <td><code>@path</code> / <code>@query</code> mismatch (<code>403</code>)</td>
+                    </tr>
+                    <tr>
+                      <td>5. Expired Window (40) &amp; Nonce Replay (40)</td>
+                      <td>80</td>
+                      <td class="vermilion"><strong>0.0%</strong> rejected (0/80)</td>
+                      <td class="emerald"><strong>100.0%</strong> rejected (80/80)</td>
+                      <td><code>403</code> expired / <code>429</code> replay</td>
+                    </tr>
+                    <tr class="summary-row">
+                      <td>Total Spoofed Bot Rejection (7-Run Median)</td>
+                      <td>400</td>
+                      <td class="vermilion">20.0% [20.0..20.0]</td>
+                      <td class="emerald">100.0% [100.0..100.0]</td>
+                      <td>+80.0 pp (IQR 0.0%)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-    <!-- SLIDE 9 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Threats to Validity &amp; Engineering Checks</span>
-        <span class="speaker">Speaker 3: Trần Đại Hiệp (23120256)</span>
-      </div>
-      <div>
-        <h2>Limits of Our Measurement &amp; How We Checked Our Assistant</h2>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Limits of Our Measurement</h3>
-            <ul>
-              <li>
-                <strong>Loopback vs. WAN Discovery:</strong> Cold JWKS fetch was
-                <strong>2.822 ms</strong> on <code>127.0.0.1</code>; cross-region TLS + DNS adds
-                <code>50–250 ms</code> on cache miss.
-              </li>
-              <li>
-                <strong>Single-Process Nonce Map:</strong> Multi-node origins need Redis for atomic
-                replay checks, adding <code>~0.3–1.5 ms</code> network RTT.
-              </li>
-              <li>
-                <strong>GET + Ed25519 Only:</strong> <code>rsa-pss-sha512</code> costs more CPU, and
-                <code>POST</code> bodies require RFC 9530 <code>Content-Digest</code> buffering.
-              </li>
-            </ul>
+            <footer class="footbar">
+              <span
+                >Source: results/summary.json · Deterministic across all 7 runs (min = max, IQR =
+                0.0%)</span
+              >
+              <span>Slide 05 / 10</span>
+            </footer>
           </div>
-          <div class="card card-accent">
-            <h3 style="color: #34d399">3 Real Bugs Caught &amp; Logged in AI-LOG.md</h3>
-            <ul>
-              <li>
-                <strong>Draft Evolution:</strong> Caught outdated bare-string
-                <code>Signature-Agent</code>; updated to Oct 2026 WG Draft
-                <code>-01</code> Structured Dictionary.
-              </li>
-              <li>
-                <strong>Windows 15.625 ms CPU Tick Quantization:</strong>
-                <code>process.cpuUsage()</code> gave noisy <code>[0%..118%]</code> jumps; switched
-                to isolated-worker <code>eventLoopUtilization()</code> (IQR <code>9.7%</code>).
-              </li>
-              <li>
-                <strong>Cross-Path Replay:</strong> Enforced <code>@method</code> +
-                <code>@path</code> + <code>@query</code> instead of <code>@authority</code>-only
-                signing.
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="footer">
-        <span
-          >10 automated tests verify RFC 7638 thumbprints, IETF vectors E.2.1–E.2.3, SSRF &amp;
-          (URL, keyid) cache isolation</span
-        >
-        <span>Slide 9 / 10</span>
-      </div>
-    </section>
+        </section>
 
-    <!-- SLIDE 10 -->
-    <section class="slide">
-      <div class="topbar">
-        <span class="badge">Conclusion &amp; Recommendation</span>
-        <span class="speaker">Speaker 3: Trần Đại Hiệp (23120256)</span>
-      </div>
-      <div>
-        <h2>Final Recommendation: Adopt Web Bot Auth selectively with Edge Caching</h2>
-        <table style="margin-bottom: 18px">
-          <thead>
-            <tr>
-              <th>Deployment Scenario</th>
-              <th>Recommended Mechanism</th>
-              <th>Key Configuration</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>AI crawler / partner API tier on shared cloud IPs</td>
-              <td class="green"><strong>Use Web Bot Auth (Ed25519)</strong></td>
-              <td>
-                Cover <code>@method</code>, <code>@authority</code>, <code>@path</code>,
-                <code>@query</code>; short <code>expires</code> (≤ 300s) + SSRF-safe cached JWKS
-              </td>
-            </tr>
-            <tr>
-              <td>High-RPS origin (&gt; 5,000 req/s) or DDoS-exposed routes</td>
-              <td class="amber"><strong>Verify at CDN Edge + Session Token</strong></td>
-              <td>
-                Offload <code>+69.7%</code> CPU cost from origin; exchange first verified request
-                for short session token
-              </td>
-            </tr>
-            <tr>
-              <td>Public static files / general unprivileged web pages</td>
-              <td class="blue"><strong>Keep Unsigned + Rate Limit</strong></td>
-              <td>
-                Do not pay <code>+0.380 ms</code> p95 verify latency &amp;
-                <code>457 bytes</code> headers where bot identity changes nothing
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="card">
-          <h3>Primary Sources Checked (All Read 2026-11-18)</h3>
-          <p class="muted" style="font-size: 15.5px">
-            [1] IETF <strong>RFC 9421</strong> (<em>HTTP Message Signatures</em>, Proposed Standard,
-            Feb 2024) · [2] IETF WG Draft
-            <strong><code>draft-ietf-webbotauth-httpsig-protocol-01</code></strong> (29 Oct 2026,
-            exp. May 2027) · [3] IETF <strong>RFC 9651</strong> (<em>Structured Field Values</em>,
-            Sep 2024), <strong>RFC 7638</strong> &amp; <strong>RFC 8037</strong> · [4] Cloudflare
-            <code>web-bot-auth@0.2.0</code> &amp; Node.js <code>v26.13.1</code>
-            <code>node:crypto</code> / <code>node:perf_hooks</code> docs.
-          </p>
-        </div>
-      </div>
-      <div class="footer">
-        <span
-          >Thank you! · Re-run our study in 10 seconds: git clone &amp;&amp; npm test &amp;&amp; npm
-          run measure</span
-        >
-        <span>Slide 10 / 10</span>
-      </div>
-    </section>
+        <!-- ===========================================
+             SLIDE 06 — LATENCY & COLD JWKS DISCOVERY
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">06</span>
+                <span class="kicker">Finding 2 · Verification Latency &amp; Discovery</span>
+              </div>
+              <span class="speaker-chip">Speaker 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Latency Cost: Sub-Millisecond Steady State, Bounded Cold Discovery
+              </h2>
+
+              <div class="grid-3 reveal d2" style="margin-bottom: 26px">
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Bot Verify p50 (n = 700)</span>
+                  <div class="kpi-value emerald">0.221 ms</div>
+                  <p class="kpi-caption">
+                    vs. Baseline <strong>0.017 ms</strong><br />Spread: [0.218..0.267] ms (IQR 0.022
+                    ms)
+                  </p>
+                </div>
+                <div class="panel panel-amber">
+                  <span class="eyebrow amber">Bot Verify p95 (n = 700)</span>
+                  <div class="kpi-value amber">0.421 ms</div>
+                  <p class="kpi-caption">
+                    vs. Baseline <strong>0.046 ms</strong><br />Pairwise delta:
+                    <strong>+0.380 ms</strong> [0.349..0.468]
+                  </p>
+                </div>
+                <div class="panel panel-cobalt">
+                  <span class="eyebrow cobalt">Cold JWKS Fetch (Cache Miss)</span>
+                  <div class="kpi-value cobalt">2.822 ms</div>
+                  <p class="kpi-caption">
+                    Spread: [2.139..4.248] ms (IQR 0.950 ms)<br /><strong>1 fetch/run</strong> via
+                    coalescing
+                  </p>
+                </div>
+              </div>
+
+              <div class="panel reveal d3">
+                <h3>
+                  Latency Comparison &amp; Why In-Flight Request Coalescing Matters (Appendix C.3)
+                </h3>
+                <div class="bar-group" style="margin-bottom: 14px">
+                  <div class="bar-row">
+                    <span>Baseline Verify p95</span>
+                    <div class="bar-track">
+                      <div class="bar-fill" style="width: 2%; background: var(--ink-muted)"></div>
+                    </div>
+                    <span>0.046 ms</span>
+                  </div>
+                  <div class="bar-row">
+                    <span>Web Bot Auth p95</span>
+                    <div class="bar-track">
+                      <div
+                        class="bar-fill"
+                        style="width: 15%; background: var(--accent-emerald)"
+                      ></div>
+                    </div>
+                    <span>0.421 ms</span>
+                  </div>
+                  <div class="bar-row">
+                    <span>Cold JWKS Discovery</span>
+                    <div class="bar-track">
+                      <div
+                        class="bar-fill"
+                        style="width: 100%; background: var(--accent-cobalt)"
+                      ></div>
+                    </div>
+                    <span>2.822 ms (once)</span>
+                  </div>
+                </div>
+                <p class="kpi-caption">
+                  When 16 concurrent sockets arrive on a cold cache,
+                  <code>DirectoryResolver</code> coalesces them into <strong>1 HTTPS fetch</strong>;
+                  the remaining 299 valid bot requests verify from RAM. End-to-end HTTPS
+                  <code>p95</code> rises from <strong>4.600 ms</strong> to
+                  <strong>6.043 ms</strong> (<strong>+1.794 ms</strong> median delta).
+                </p>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >All-request verify p95 across entire 1,000-request workload: 0.042 ms → 0.398 ms
+                (+0.359 ms)</span
+              >
+              <span>Slide 06 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 07 — ORIGIN CPU & WIRE OVERHEAD
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">07</span>
+                <span class="kicker">Finding 3 · Origin CPU &amp; Bandwidth Cost</span>
+              </div>
+              <span class="speaker-chip">Speaker 2 · Nguyễn Thành Vinh (21120595)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">Origin CPU &amp; Wire Cost: Asymmetric Crypto Is Not Free</h2>
+
+              <div class="grid-3 reveal d2" style="margin-bottom: 26px">
+                <div class="panel panel-amber">
+                  <span class="eyebrow amber">Origin Active CPU (1k Reqs)</span>
+                  <div class="kpi-value amber">+69.7%</div>
+                  <p class="kpi-caption">
+                    <strong>170.27 ms → 291.27 ms</strong><br />+127.0 µs/req · Spread
+                    [+58.7%..+109.6%], IQR 9.7%
+                  </p>
+                </div>
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Single-Core Peak Throughput</span>
+                  <div class="kpi-value vermilion">-37.0%</div>
+                  <p class="kpi-caption">
+                    <strong>5,432 → 3,422 req/s</strong><br />Measured in isolated child worker via
+                    libuv ELU
+                  </p>
+                </div>
+                <div class="panel panel-cobalt">
+                  <span class="eyebrow cobalt">Signed Request Header Bytes</span>
+                  <div class="kpi-value cobalt">457 bytes</div>
+                  <p class="kpi-caption">
+                    <code>Signature</code> + <code>Signature-Input</code> +
+                    <code>Signature-Agent</code> per signed request
+                  </p>
+                </div>
+              </div>
+
+              <div class="panel reveal d3">
+                <h3>Two Engineering Costs Exposed by Our Benchmark</h3>
+                <ul>
+                  <li>
+                    <strong>Main-Thread CPU Asymmetry:</strong> 32-bit CIDR bitmask checks take
+                    nanoseconds; Structured Field parsing + RFC 9421 base serialization +
+                    <code>Ed25519</code> curve math adds <strong>127.0 µs</strong> of active CPU per
+                    request across the mixed workload.
+                  </li>
+                  <li>
+                    <strong>HPACK / QPACK Header Incompressibility (Appendix C.7):</strong> Because
+                    per-request signatures change with every URL and <code>nonce</code>, HTTP/2 and
+                    HTTP/3 dynamic header tables cannot index <code>Signature</code> — literal bytes
+                    are transmitted every time.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Measured via Node.js perf_hooks.performance.eventLoopUtilization() (nanosecond
+                QueryPerformanceCounter)</span
+              >
+              <span>Slide 07 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 08 — WHEN NOT TO USE WEB BOT AUTH
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">08</span>
+                <span class="kicker">Critical Evaluation · Criterion 3</span>
+              </div>
+              <span class="speaker-chip">Speaker 3 · Trần Đại Hiệp (23120256)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                When <span class="vermilion">NOT</span> to Use Web Bot Auth Directly at Your Origin
+              </h2>
+
+              <div class="grid-2 reveal d2">
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Case 01 · §5.6 &amp; §6.2</span>
+                  <h3>Unthrottled L7 DDoS or Public Static Assets</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    Attackers flooding invalid <code>Ed25519</code> signatures force your origin to
+                    burn <code>~0.22 ms</code> CPU per hit before rejecting. Offload verification to
+                    an <strong>edge CDN proxy</strong> or issue a session token after request #1.
+                  </p>
+                </div>
+
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Case 02 · §5.5.2 &amp; §6.3</span>
+                  <h3>Instant Key Revocation Requirements</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    Web Bot Auth defines <strong>zero revocation channel</strong>. If a bot's
+                    signing key is compromised, forged signatures remain valid until
+                    <code>expires</code> or until every verifier's cached JWKS <code>max-age</code>
+                    TTL lapses.
+                  </p>
+                </div>
+
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Case 03 · §7.1 Privacy</span>
+                  <h3>Privacy-Sensitive Personal Agents</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    A <code>Signature-Agent</code> URL links requests across origins even after key
+                    rotation. Never attach user-identifying <code>Signature-Agent</code> directories
+                    to personal user-owned browsing agents.
+                  </p>
+                </div>
+
+                <div class="panel panel-vermilion">
+                  <span class="eyebrow vermilion">Case 04 · §6.7 SSRF Surface</span>
+                  <h3>Without Strict SSRF Bounds on Key Discovery</h3>
+                  <p class="kpi-caption" style="font-size: 22px; color: var(--ink-primary)">
+                    Untrusted clients control <code>Signature-Agent</code>. Resolving URLs without
+                    blocking private/metadata IPs (<code>169.254.169.254</code>,
+                    <code>127.0.0.1</code>), redirects, and oversized JWKS turns auth into an
+                    <strong>SSRF vector</strong>.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Grounded directly in draft-ietf-webbotauth-httpsig-protocol-01 Sections 5.6, 6.2,
+                6.3, 6.7 &amp; 7.1</span
+              >
+              <span>Slide 08 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 09 — MEASUREMENT LIMITS & AI-LOG CATCHES
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">09</span>
+                <span class="kicker">Threats to Validity &amp; Verification</span>
+              </div>
+              <span class="speaker-chip">Speaker 3 · Trần Đại Hiệp (23120256)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">Limits of Our Measurement &amp; Defects Caught in AI-LOG.md</h2>
+
+              <div class="grid-2 reveal d2">
+                <div class="panel">
+                  <span class="eyebrow amber">Measurement Boundaries</span>
+                  <h3>What Would Change in Production</h3>
+                  <ul>
+                    <li>
+                      <strong>Loopback vs. WAN Discovery:</strong> Cold JWKS fetch took
+                      <strong>2.822 ms</strong> over <code>127.0.0.1</code>; cross-region DNS + TLS
+                      adds <code>50–250 ms</code> on cache miss.
+                    </li>
+                    <li>
+                      <strong>In-Memory Nonce Store:</strong> Multi-replica origins require a shared
+                      Redis store for atomic replay checks, adding <code>~0.3–1.5 ms</code> RTT.
+                    </li>
+                    <li>
+                      <strong>GET + Ed25519 Scope:</strong> <code>rsa-pss-sha512</code> costs higher
+                      CPU, and <code>POST</code> bodies require RFC 9530
+                      <code>Content-Digest</code> buffering.
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="panel panel-emerald">
+                  <span class="eyebrow emerald">Criterion 6 · AI Verification</span>
+                  <h3>Real Technical Defects Caught &amp; Fixed</h3>
+                  <ul>
+                    <li>
+                      <strong>Oct 2026 Draft Evolution:</strong> Caught superseded bare-string
+                      <code>Signature-Agent</code>; implemented WG Draft <code>-01</code> Structured
+                      Dictionary.
+                    </li>
+                    <li>
+                      <strong>Windows 15.625 ms CPU Tick Noise:</strong>
+                      <code>process.cpuUsage()</code> quantized to <code>1/64 s</code> ticks
+                      (<code>[0%..118%]</code>); replaced with isolated-worker
+                      <code>eventLoopUtilization()</code> (IQR <code>9.7%</code>).
+                    </li>
+                    <li>
+                      <strong>Cross-Path Replay &amp; Stale Tooling:</strong> Enforced
+                      <code>@method</code> + <code>@path</code> + <code>@query</code> and upgraded
+                      deprecated ESLint 9 / Actions v4 to ESLint 10 &amp; v7.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >10 automated tests verify RFC 7638 thumbprints, IETF vectors E.2.1–E.2.3, SSRF
+                &amp; (URL, keyid) isolation</span
+              >
+              <span>Slide 09 / 10</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===========================================
+             SLIDE 10 — FINAL RECOMMENDATION & SOURCES
+             =========================================== -->
+        <section class="slide">
+          <div class="slide-frame">
+            <header class="masthead">
+              <div class="masthead-left">
+                <span class="slide-num-pill">10</span>
+                <span class="kicker">Conclusion &amp; Primary Sources</span>
+              </div>
+              <span class="speaker-chip">Speaker 3 · Trần Đại Hiệp (23120256)</span>
+            </header>
+
+            <div>
+              <h2 class="reveal d1">
+                Recommendation: Use Web Bot Auth Where Identity Unlocks Privilege
+              </h2>
+
+              <div class="reveal d2" style="margin-bottom: 24px">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Origin Scenario</th>
+                      <th>Recommended Policy</th>
+                      <th>Engineering Configuration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>AI Crawler / Partner API on Cloud IPs</strong></td>
+                      <td class="emerald"><strong>Adopt Web Bot Auth (Ed25519)</strong></td>
+                      <td>
+                        Cover <code>@method</code>, <code>@authority</code>, <code>@path</code>,
+                        <code>@query</code>; <code>expires ≤ 300s</code>; SSRF-safe coalesced JWKS
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>High-RPS Origin (&gt; 5,000 req/s) / L7 DDoS</strong></td>
+                      <td class="amber"><strong>Verify at CDN Edge + Session</strong></td>
+                      <td>
+                        Offload <code>+69.7%</code> CPU overhead from origin; exchange request #1
+                        for bounded session token
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Public Static Assets / Open Pages</strong></td>
+                      <td class="cobalt"><strong>Keep Unsigned + Rate Limit</strong></td>
+                      <td>
+                        Skip <code>+0.380 ms</code> p95 verify cost &amp; <code>457 bytes</code>
+                        headers when bot identity grants nothing
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="panel reveal d3" style="padding: 22px 28px">
+                <span class="eyebrow cobalt"
+                  >Primary Official Sources (All Verified 2026-11-18)</span
+                >
+                <p class="kpi-caption" style="font-size: 20px; color: var(--ink-primary)">
+                  [1] IETF <strong>RFC 9421</strong> (<em>HTTP Message Signatures</em>, Proposed
+                  Standard, Feb 2024) · [2] IETF <code>webbotauth</code> WG
+                  <strong><code>draft-ietf-webbotauth-httpsig-protocol-01</code></strong> (29 Oct
+                  2026, exp. May 2027) · [3] IETF <strong>RFC 9651</strong> (Sep 2024),
+                  <strong>RFC 7638</strong> &amp; <strong>RFC 8037</strong> · [4] Cloudflare
+                  <code>web-bot-auth@0.2.0</code> &amp; Node.js <code>v26.13.1</code> Active LTS
+                  docs.
+                </p>
+              </div>
+            </div>
+
+            <footer class="footbar">
+              <span
+                >Thank you! · Re-run in 10 seconds: git clone
+                https://github.com/danhuupham/awad-web-bot-auth &amp;&amp; npm run measure</span
+              >
+              <span>Slide 10 / 10</span>
+            </footer>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Floating Navigation Pill (Hidden in PDF Print) -->
+    <nav class="deck-controls" aria-label="Slide controls">
+      <button id="prevBtn" type="button" aria-label="Previous slide">← Prev</button>
+      <span id="slideCounter">01 / 10</span>
+      <button id="nextBtn" type="button" aria-label="Next slide">Next →</button>
+    </nav>
+
+    <script>
+      /* ===========================================
+         SLIDE PRESENTATION & INLINE EDIT CONTROLLER
+         =========================================== */
+      class SlidePresentation {
+        constructor() {
+          this.slides = Array.from(document.querySelectorAll('.slide'));
+          this.currentSlide = 0;
+          this.stage = document.getElementById('deckStage');
+          this.counter = document.getElementById('slideCounter');
+          this.editActive = false;
+          this.wheelLocked = false;
+
+          this.setupStageScale();
+          this.setupKeyboardNav();
+          this.setupPointerNav();
+          this.setupInlineEditor();
+          this.showSlide(0);
+        }
+
+        setupStageScale() {
+          const scale = () => {
+            const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * factor) / 2;
+            const y = (window.innerHeight - 1080 * factor) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+          };
+          scale();
+          window.addEventListener('resize', scale);
+        }
+
+        showSlide(index) {
+          this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+          this.slides.forEach((slide, i) => {
+            const isCurrent = i === this.currentSlide;
+            slide.classList.toggle('active', isCurrent);
+            slide.classList.toggle('visible', isCurrent);
+          });
+          if (this.counter) {
+            const cur = String(this.currentSlide + 1).padStart(2, '0');
+            const tot = String(this.slides.length).padStart(2, '0');
+            this.counter.textContent = `${cur} / ${tot}`;
+          }
+        }
+
+        setupKeyboardNav() {
+          document.addEventListener('keydown', (e) => {
+            if (e.target && e.target.isContentEditable) return;
+            if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+              e.preventDefault();
+              this.showSlide(this.currentSlide + 1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+              e.preventDefault();
+              this.showSlide(this.currentSlide - 1);
+            } else if (e.key === 'Home') {
+              e.preventDefault();
+              this.showSlide(0);
+            } else if (e.key === 'End') {
+              e.preventDefault();
+              this.showSlide(this.slides.length - 1);
+            } else if (e.key === 'e' || e.key === 'E') {
+              this.toggleEditMode();
+            }
+          });
+        }
+
+        setupPointerNav() {
+          document.getElementById('prevBtn')?.addEventListener('click', () => {
+            this.showSlide(this.currentSlide - 1);
+          });
+          document.getElementById('nextBtn')?.addEventListener('click', () => {
+            this.showSlide(this.currentSlide + 1);
+          });
+
+          window.addEventListener(
+            'wheel',
+            (e) => {
+              if (this.editActive || this.wheelLocked || Math.abs(e.deltaY) < 24) return;
+              this.wheelLocked = true;
+              this.showSlide(this.currentSlide + (e.deltaY > 0 ? 1 : -1));
+              setTimeout(() => {
+                this.wheelLocked = false;
+              }, 420);
+            },
+            { passive: true }
+          );
+
+          let touchStartX = 0;
+          window.addEventListener(
+            'touchstart',
+            (e) => {
+              touchStartX = e.changedTouches[0].screenX;
+            },
+            { passive: true }
+          );
+          window.addEventListener(
+            'touchend',
+            (e) => {
+              const dx = e.changedTouches[0].screenX - touchStartX;
+              if (Math.abs(dx) > 50) {
+                this.showSlide(this.currentSlide + (dx < 0 ? 1 : -1));
+              }
+            },
+            { passive: true }
+          );
+        }
+
+        setupInlineEditor() {
+          const hotzone = document.getElementById('editHotzone');
+          const toggle = document.getElementById('editToggle');
+          let hideTimer = null;
+
+          const showBtn = () => {
+            clearTimeout(hideTimer);
+            toggle.classList.add('show');
+          };
+          const scheduleHide = () => {
+            hideTimer = setTimeout(() => {
+              if (!this.editActive) toggle.classList.remove('show');
+            }, 400);
+          };
+
+          hotzone.addEventListener('mouseenter', showBtn);
+          hotzone.addEventListener('mouseleave', scheduleHide);
+          hotzone.addEventListener('click', () => this.toggleEditMode());
+          toggle.addEventListener('mouseenter', showBtn);
+          toggle.addEventListener('mouseleave', scheduleHide);
+          toggle.addEventListener('click', () => this.toggleEditMode());
+        }
+
+        toggleEditMode() {
+          this.editActive = !this.editActive;
+          const toggle = document.getElementById('editToggle');
+          toggle.classList.toggle('active', this.editActive);
+          toggle.classList.toggle('show', this.editActive);
+          document.querySelectorAll('h1, h2, h3, p, li, td, th').forEach((el) => {
+            el.contentEditable = this.editActive ? 'true' : 'false';
+          });
+        }
+      }
+
+      new SlidePresentation();
+    </script>
   </body>
 </html>

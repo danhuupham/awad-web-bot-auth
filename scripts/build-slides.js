@@ -27,7 +27,14 @@ if (!browserBin) {
 const fileUrl = pathToFileURL(HTML_PATH).href;
 execFileSync(
   browserBin,
-  ['--headless', '--disable-gpu', '--no-pdf-header-footer', `--print-to-pdf=${PDF_PATH}`, fileUrl],
+  [
+    '--headless',
+    '--disable-gpu',
+    '--virtual-time-budget=3000',
+    '--no-pdf-header-footer',
+    `--print-to-pdf=${PDF_PATH}`,
+    fileUrl
+  ],
   { stdio: 'inherit' }
 );
 
