@@ -1,0 +1,339 @@
+{
+  "environment": {
+    "measuredAt": "2026-11-18T07:14:12.942Z",
+    "nodeVersion": "v26.13.1",
+    "platform": "win32 10.0.26300 (x64)",
+    "cpuModel": "AMD Ryzen 7 4800H with Radeon Graphics",
+    "logicalCores": 16,
+    "totalMemoryGb": 31.42,
+    "seed": 20261118,
+    "runs": 7,
+    "workloadSize": 1000,
+    "concurrency": 16
+  },
+  "baseline": {
+    "spoofedBotRejectionRatePct": {
+      "median": 20,
+      "iqr": 0,
+      "p25": 20,
+      "p75": 20,
+      "min": 20,
+      "max": 20
+    },
+    "validBotAcceptanceRatePct": {
+      "median": 100,
+      "iqr": 0,
+      "p25": 100,
+      "p75": 100,
+      "min": 100,
+      "max": 100
+    },
+    "humanPassThroughRatePct": {
+      "median": 100,
+      "iqr": 0,
+      "p25": 100,
+      "p75": 100,
+      "min": 100,
+      "max": 100
+    },
+    "verifyLatencyBotP50Ms": {
+      "median": 0.0167,
+      "iqr": 0.003375,
+      "p25": 0.016325,
+      "p75": 0.0197,
+      "min": 0.0152,
+      "max": 0.0248
+    },
+    "verifyLatencyBotP95Ms": {
+      "median": 0.046,
+      "iqr": 0.007715,
+      "p25": 0.043163,
+      "p75": 0.050878,
+      "min": 0.04045,
+      "max": 0.0547
+    },
+    "verifyLatencyAllP95Ms": {
+      "median": 0.04182,
+      "iqr": 0.007153,
+      "p25": 0.040155,
+      "p75": 0.047308,
+      "min": 0.038605,
+      "max": 0.0534
+    },
+    "e2eLatencyP50Ms": {
+      "median": 2.81275,
+      "iqr": 0.611625,
+      "p25": 2.7113,
+      "p75": 3.322925,
+      "min": 2.6545,
+      "max": 3.86035
+    },
+    "e2eLatencyP95Ms": {
+      "median": 4.59995,
+      "iqr": 0.670433,
+      "p25": 4.459433,
+      "p75": 5.129865,
+      "min": 4.24965,
+      "max": 5.72677
+    },
+    "originCpuActiveMs": {
+      "median": 170.2712,
+      "iqr": 28.6589,
+      "p25": 164.59555,
+      "p75": 193.25445,
+      "min": 161.233,
+      "max": 221.02
+    },
+    "originCpuUsPerReq": {
+      "median": 170.271,
+      "iqr": 28.659,
+      "p25": 164.5955,
+      "p75": 193.2545,
+      "min": 161.233,
+      "max": 221.02
+    },
+    "originCpuUtilizationPct": {
+      "median": 91.72,
+      "iqr": 2.152,
+      "p25": 90.243,
+      "p75": 92.395,
+      "min": 89.163,
+      "max": 92.784
+    },
+    "throughputReqPerSec": {
+      "median": 5432.435,
+      "iqr": 806.5935,
+      "p25": 4755.274,
+      "p75": 5561.8675,
+      "min": 4080.9,
+      "max": 5722.873
+    },
+    "byAttack": {
+      "spoof_external_ip_ua": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "spoof_shared_cloud_ip_ua": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      },
+      "forged_rogue_directory_sig": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      },
+      "tampered_target_path_sig": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      },
+      "expired_or_replayed_sig": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      }
+    }
+  },
+  "change": {
+    "spoofedBotRejectionRatePct": {
+      "median": 100,
+      "iqr": 0,
+      "p25": 100,
+      "p75": 100,
+      "min": 100,
+      "max": 100
+    },
+    "validBotAcceptanceRatePct": {
+      "median": 100,
+      "iqr": 0,
+      "p25": 100,
+      "p75": 100,
+      "min": 100,
+      "max": 100
+    },
+    "humanPassThroughRatePct": {
+      "median": 100,
+      "iqr": 0,
+      "p25": 100,
+      "p75": 100,
+      "min": 100,
+      "max": 100
+    },
+    "verifyLatencyBotP50Ms": {
+      "median": 0.2211,
+      "iqr": 0.02245,
+      "p25": 0.219825,
+      "p75": 0.242275,
+      "min": 0.21835,
+      "max": 0.2673
+    },
+    "verifyLatencyBotP95Ms": {
+      "median": 0.420615,
+      "iqr": 0.08532,
+      "p25": 0.406328,
+      "p75": 0.491648,
+      "min": 0.396425,
+      "max": 0.52295
+    },
+    "verifyLatencyAllP95Ms": {
+      "median": 0.39821,
+      "iqr": 0.079995,
+      "p25": 0.379145,
+      "p75": 0.45914,
+      "min": 0.372615,
+      "max": 0.486565
+    },
+    "e2eLatencyP50Ms": {
+      "median": 4.64735,
+      "iqr": 0.751725,
+      "p25": 4.516875,
+      "p75": 5.2686,
+      "min": 4.4301,
+      "max": 6.0128
+    },
+    "e2eLatencyP95Ms": {
+      "median": 6.04347,
+      "iqr": 2.542563,
+      "p25": 5.704648,
+      "p75": 8.24721,
+      "min": 5.567545,
+      "max": 8.760215
+    },
+    "coldDirectoryFetchMs": {
+      "median": 2.8222,
+      "iqr": 0.9496,
+      "p25": 2.32055,
+      "p75": 3.27015,
+      "min": 2.1389,
+      "max": 4.2481
+    },
+    "directoryFetches": {
+      "median": 1,
+      "iqr": 0,
+      "p25": 1,
+      "p75": 1,
+      "min": 1,
+      "max": 1
+    },
+    "originCpuActiveMs": {
+      "median": 291.2679,
+      "iqr": 60.207,
+      "p25": 284.81245,
+      "p75": 345.01945,
+      "min": 277.7963,
+      "max": 382.8756
+    },
+    "originCpuUsPerReq": {
+      "median": 291.268,
+      "iqr": 60.2065,
+      "p25": 284.8125,
+      "p75": 345.019,
+      "min": 277.796,
+      "max": 382.876
+    },
+    "originCpuUtilizationPct": {
+      "median": 99.563,
+      "iqr": 0.089,
+      "p25": 99.534,
+      "p75": 99.623,
+      "min": 98.696,
+      "max": 99.681
+    },
+    "throughputReqPerSec": {
+      "median": 3422.299,
+      "iqr": 621.52,
+      "p25": 2873.6165,
+      "p75": 3495.1365,
+      "min": 2600.347,
+      "max": 3587.456
+    },
+    "signedHeaderBytesMedian": 457,
+    "byAttack": {
+      "spoof_external_ip_ua": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "spoof_shared_cloud_ip_ua": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "forged_rogue_directory_sig": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "tampered_target_path_sig": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "expired_or_replayed_sig": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      }
+    }
+  },
+  "deltas": {
+    "spoofedRejectionGainPctPoints": {
+      "median": 80,
+      "iqr": 0,
+      "p25": 80,
+      "p75": 80,
+      "min": 80,
+      "max": 80
+    },
+    "addedVerifyBotP95Ms": {
+      "median": 0.380165,
+      "iqr": 0.080222,
+      "p25": 0.36212,
+      "p75": 0.442343,
+      "min": 0.349295,
+      "max": 0.468325
+    },
+    "addedVerifyAllP95Ms": {
+      "median": 0.35901,
+      "iqr": 0.07424,
+      "p25": 0.338788,
+      "p75": 0.413028,
+      "min": 0.329405,
+      "max": 0.433165
+    },
+    "addedE2eP95Ms": {
+      "median": 1.79382,
+      "iqr": 1.512985,
+      "p25": 1.159918,
+      "p75": 2.672903,
+      "min": 1.03582,
+      "max": 4.0247
+    },
+    "addedOriginCpuActiveMs": {
+      "median": 127.0077,
+      "iqr": 30.17305,
+      "p25": 115.7722,
+      "p75": 145.94525,
+      "min": 111.5429,
+      "max": 181.3939
+    },
+    "addedOriginCpuUsPerReq": {
+      "median": 127.007,
+      "iqr": 30.1735,
+      "p25": 115.772,
+      "p75": 145.9455,
+      "min": 111.543,
+      "max": 181.394
+    },
+    "addedOriginCpuRelativePct": {
+      "median": 69.657,
+      "iqr": 9.696,
+      "p25": 67.2445,
+      "p75": 76.9405,
+      "min": 58.749,
+      "max": 109.636
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "run": 6,
+  "executionOrder": [
+    "change",
+    "baseline"
+  ],
+  "environment": {
+    "measuredAt": "2026-11-18T07:14:12.942Z",
+    "nodeVersion": "v26.13.1",
+    "platform": "win32 10.0.26300 (x64)",
+    "cpuModel": "AMD Ryzen 7 4800H with Radeon Graphics",
+    "logicalCores": 16,
+    "totalMemoryGb": 31.42,
+    "seed": 20261118,
+    "runs": 7,
+    "workloadSize": 1000,
+    "concurrency": 16
+  },
+  "baseline": {
+    "totalRequests": 1000,
+    "humanPassThroughRatePct": 100,
+    "validBotAcceptanceRatePct": 100,
+    "spoofedBotRejectionRatePct": 20,
+    "spoofedRejectedCount": 80,
+    "spoofedTotalCount": 400,
+    "validBotsAcceptedCount": 300,
+    "validBotsTotalCount": 300,
+    "byAttack": {
+      "spoof_external_ip_ua": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "spoof_shared_cloud_ip_ua": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      },
+      "forged_rogue_directory_sig": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      },
+      "tampered_target_path_sig": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      },
+      "expired_or_replayed_sig": {
+        "total": 80,
+        "rejected": 0,
+        "rejectedPct": 0
+      }
+    },
+    "verifyLatencyBotP50Ms": 0.01635,
+    "verifyLatencyBotP95Ms": 0.04391,
+    "verifyLatencyAllP50Ms": 0.0143,
+    "verifyLatencyAllP95Ms": 0.04111,
+    "e2eLatencyP50Ms": 2.7615,
+    "e2eLatencyP95Ms": 4.509255,
+    "coldDirectoryFetchMs": 2.8222,
+    "directoryFetches": 0,
+    "directoryCacheHits": 413,
+    "originCpuActiveMs": 165.4515,
+    "originCpuUsPerReq": 165.451,
+    "originCpuUtilizationPct": 90.291,
+    "originOsCpuTicksMs": 125,
+    "originWallMs": 183.2465,
+    "throughputReqPerSec": 5457.13,
+    "signedHeaderBytesMedian": 457
+  },
+  "change": {
+    "totalRequests": 1000,
+    "humanPassThroughRatePct": 100,
+    "validBotAcceptanceRatePct": 100,
+    "spoofedBotRejectionRatePct": 100,
+    "spoofedRejectedCount": 400,
+    "spoofedTotalCount": 400,
+    "validBotsAcceptedCount": 300,
+    "validBotsTotalCount": 300,
+    "byAttack": {
+      "spoof_external_ip_ua": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "spoof_shared_cloud_ip_ua": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "forged_rogue_directory_sig": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "tampered_target_path_sig": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      },
+      "expired_or_replayed_sig": {
+        "total": 80,
+        "rejected": 80,
+        "rejectedPct": 100
+      }
+    },
+    "verifyLatencyBotP50Ms": 0.23885,
+    "verifyLatencyBotP95Ms": 0.507275,
+    "verifyLatencyAllP50Ms": 0.07135,
+    "verifyLatencyAllP95Ms": 0.46898,
+    "e2eLatencyP50Ms": 5.23825,
+    "e2eLatencyP95Ms": 8.533955,
+    "coldDirectoryFetchMs": 2.8222,
+    "directoryFetches": 1,
+    "directoryCacheHits": 413,
+    "originCpuActiveMs": 346.8454,
+    "originCpuUsPerReq": 346.845,
+    "originCpuUtilizationPct": 98.696,
+    "originOsCpuTicksMs": 359,
+    "originWallMs": 351.4303,
+    "throughputReqPerSec": 2845.514,
+    "signedHeaderBytesMedian": 457
+  },
+  "deltas": {
+    "spoofedRejectionGainPctPoints": 80,
+    "addedVerifyBotP95Ms": 0.463365,
+    "addedVerifyAllP95Ms": 0.42787,
+    "addedE2eP95Ms": 4.0247,
+    "addedOriginCpuActiveMs": 181.3939,
+    "addedOriginCpuUsPerReq": 181.394,
+    "addedOriginCpuRelativePct": 109.636
+  }
+}
