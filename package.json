@@ -13,6 +13,7 @@
     "verify:claims": "node scripts/verify-claims.js",
     "scan": "node scripts/scan-secrets.js",
     "build:slides": "node scripts/build-slides.js",
+    "pack:submission": "node scripts/pack-submission.js",
     "check": "npm test && npm run scan && npm run verify:claims"
   }
 }
