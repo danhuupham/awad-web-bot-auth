@@ -1,0 +1,4 @@
+node_modules/
+results/
+slides.pdf
+package-lock.json

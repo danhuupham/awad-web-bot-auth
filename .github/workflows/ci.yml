@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  verify-and-measure:
+  gates:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,15 +18,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
-      - name: Run unit, IETF test vector, security guard, and integration tests
-        run: npm test
+      - name: Install locked devDependencies
+        run: npm ci
 
-      - name: Scan working tree and git history for secrets/keys
-        run: npm run scan
+      - name: Security audit
+        run: npm audit --audit-level=high
 
-      - name: Verify REPORT.md and slide numbers match committed results/summary.json
-        run: npm run verify:claims
+      - name: Run quality gates (format:check, lint, typecheck, test, scan, verify:claims)
+        run: npm run check
 
       - name: Smoke-test reproducible measurement command (5 runs)
         run: node scripts/measure.js --runs=5

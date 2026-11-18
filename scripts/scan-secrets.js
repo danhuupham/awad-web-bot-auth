@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT_DIR = fileURLToPath(new URL('..', import.meta.url));
 
 const SECRET_PATTERNS = [
-  { name: 'PEM Private Key', regex: /-----BEGIN (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/ },
+  {
+    name: 'PEM Private Key',
+    regex: /-----BEGIN (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/
+  },
   { name: 'GitHub Token', regex: /\bgh[pousr]_[A-Za-z0-9_]{30,}\b/ },
   { name: 'Google API Key', regex: /\bAIza[0-9A-Za-z\-_]{35}\b/ },
   { name: 'OpenAI Key', regex: /\bsk-(?:proj-)?[A-Za-z0-9]{32,}\b/ },

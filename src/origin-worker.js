@@ -29,7 +29,7 @@ const delegatingVerifier = {
   }
 };
 
-process.on('message', async (msg) => {
+process.on('message', async (/** @type {any} */ msg) => {
   try {
     if (msg.type === 'init') {
       resolver = new DirectoryResolver({
@@ -46,7 +46,7 @@ process.on('message', async (msg) => {
         tlsCredentials: msg.tlsCredentials,
         verifier: delegatingVerifier
       });
-      process.send({
+      process.send?.({
         id: msg.id,
         ok: true,
         port: originServer.port,
@@ -59,7 +59,7 @@ process.on('message', async (msg) => {
     if (msg.type === 'prepare-mode') {
       activeVerifier = msg.mode === 'change' ? changeVerifier : baselineVerifier;
       activeVerifier.resetState();
-      process.send({ id: msg.id, ok: true });
+      process.send?.({ id: msg.id, ok: true });
       return;
     }
 
@@ -68,7 +68,7 @@ process.on('message', async (msg) => {
       eluSnapshot = performance.eventLoopUtilization();
       cpuSnapshot = process.cpuUsage();
       wallStartNs = process.hrtime.bigint();
-      process.send({ id: msg.id, ok: true });
+      process.send?.({ id: msg.id, ok: true });
       return;
     }
 
@@ -80,7 +80,7 @@ process.on('message', async (msg) => {
       const osUserMs = cpuDiff.user / 1000;
       const osSystemMs = cpuDiff.system / 1000;
       const osTotalCpuMs = osUserMs + osSystemMs;
-      process.send({
+      process.send?.({
         id: msg.id,
         ok: true,
         cpu: {
@@ -104,10 +104,10 @@ process.on('message', async (msg) => {
     if (msg.type === 'shutdown') {
       resolver?.destroy();
       await originServer?.close();
-      process.send({ id: msg.id, ok: true });
+      process.send?.({ id: msg.id, ok: true });
       process.exit(0);
     }
   } catch (err) {
-    process.send({ id: msg.id, ok: false, error: err.message });
+    process.send?.({ id: msg.id, ok: false, error: err.message });
   }
 });

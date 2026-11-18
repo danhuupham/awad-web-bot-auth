@@ -150,8 +150,14 @@ export async function startDirectoryServer({
     res.end(bodyString);
   });
 
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address();
+  await new Promise((resolve) =>
+    server.listen({ port: 0, host: '127.0.0.1' }, () => resolve(null))
+  );
+  const addr = server.address();
+  if (!addr || typeof addr === 'string') {
+    throw new Error('Failed to bind directory server TCP port');
+  }
+  const { port } = addr;
 
   return {
     port,
@@ -175,8 +181,20 @@ function parseMaxAgeSeconds(cacheControlHeader, fallbackSec) {
  * per draft-ietf-webbotauth-httpsig-protocol-01 Sections 5.4, 5.5, 6.7, 6.8, 6.10, and Appendix C.3/C.4.
  */
 export class DirectoryResolver {
+  /**
+   * @param {{
+   *   caCertPem?: string | Buffer,
+   *   allowLoopbackForLocalStudy?: boolean,
+   *   allowRfcTestKeys?: boolean,
+   *   maxBytes?: number,
+   *   maxKeys?: number,
+   *   timeoutMs?: number,
+   *   defaultTtlSec?: number,
+   *   nowFn?: () => number
+   * }} [options]
+   */
   constructor({
-    caCertPem,
+    caCertPem = undefined,
     allowLoopbackForLocalStudy = false,
     allowRfcTestKeys = false,
     maxBytes = 65536,
@@ -202,13 +220,21 @@ export class DirectoryResolver {
     this.cache = new Map();
     // Map<normalizedUrl, Promise<Map<string, crypto.KeyObject>>>
     this.inFlight = new Map();
-    this.stats = { cacheHits: 0, networkFetches: 0, coldFetchDurationsMs: [] };
+    this.stats = {
+      cacheHits: 0,
+      networkFetches: 0,
+      coldFetchDurationsMs: /** @type {number[]} */ ([])
+    };
   }
 
   clearCache() {
     this.cache.clear();
     this.inFlight.clear();
-    this.stats = { cacheHits: 0, networkFetches: 0, coldFetchDurationsMs: [] };
+    this.stats = {
+      cacheHits: 0,
+      networkFetches: 0,
+      coldFetchDurationsMs: /** @type {number[]} */ ([])
+    };
   }
 
   destroy() {

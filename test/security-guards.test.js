@@ -79,8 +79,8 @@ test('Section 5.4 indexes cached keys by (URL, keyid) pair rather than keyid alo
     res.end(JSON.stringify({ keys: [] }));
   });
 
-  await new Promise((r) => dirA.listen(0, '127.0.0.1', r));
-  await new Promise((r) => dirB.listen(0, '127.0.0.1', r));
+  await new Promise((r) => dirA.listen({ port: 0, host: '127.0.0.1' }, () => r(null)));
+  await new Promise((r) => dirB.listen({ port: 0, host: '127.0.0.1' }, () => r(null)));
 
   let fakeNowMs = 1_760_000_000_000;
   const resolver = new DirectoryResolver({
@@ -89,8 +89,13 @@ test('Section 5.4 indexes cached keys by (URL, keyid) pair rather than keyid alo
     nowFn: () => fakeNowMs
   });
 
-  const urlA = `https://127.0.0.1:${dirA.address().port}${DIRECTORY_WELL_KNOWN_PATH}`;
-  const urlB = `https://127.0.0.1:${dirB.address().port}${DIRECTORY_WELL_KNOWN_PATH}`;
+  const addrA = dirA.address();
+  const addrB = dirB.address();
+  if (!addrA || typeof addrA === 'string' || !addrB || typeof addrB === 'string') {
+    throw new Error('Expected bound TCP ports');
+  }
+  const urlA = `https://127.0.0.1:${addrA.port}${DIRECTORY_WELL_KNOWN_PATH}`;
+  const urlB = `https://127.0.0.1:${addrB.port}${DIRECTORY_WELL_KNOWN_PATH}`;
   const key1 = activeKeys[0];
 
   const hitA = await resolver.resolveKey(urlA, key1.kid);
@@ -127,8 +132,10 @@ test('Verifier rejects @authority-only signatures when narrow target coverage is
     res.writeHead(200, { 'Content-Type': DIRECTORY_MEDIA_TYPE });
     res.end(JSON.stringify({ keys: [botKey.publicJwk] }));
   });
-  await new Promise((r) => dir.listen(0, '127.0.0.1', r));
-  const dirUrl = `https://127.0.0.1:${dir.address().port}${DIRECTORY_WELL_KNOWN_PATH}`;
+  await new Promise((r) => dir.listen({ port: 0, host: '127.0.0.1' }, () => r(null)));
+  const addr = dir.address();
+  if (!addr || typeof addr === 'string') throw new Error('Expected bound TCP port');
+  const dirUrl = `https://127.0.0.1:${addr.port}${DIRECTORY_WELL_KNOWN_PATH}`;
 
   const resolver = new DirectoryResolver({
     caCertPem: creds.cert,

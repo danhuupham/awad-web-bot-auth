@@ -124,10 +124,7 @@ test('draft-ietf-webbotauth-httpsig-protocol-01 Appendix E.2.3 vector (Signed Di
     expires: 4889289600
   });
 
-  assert.equal(
-    headers['Content-Digest'],
-    'sha-256=:CADMT2aBdV/rqQr/NIru64ERQkCobVvllA4V0fLFDu0=:'
-  );
+  assert.equal(headers['Content-Digest'], 'sha-256=:CADMT2aBdV/rqQr/NIru64ERQkCobVvllA4V0fLFDu0=:');
   assert.equal(
     headers.Signature,
     'binding=:l6P8R67tm3kujAxbHWio7ll01qrEZ0dKD/WWlGhNYEmTnFZM8Wt0VQ9zqGfvo7T/UMkBxsigzChM1Gpz7gOVBg==:'

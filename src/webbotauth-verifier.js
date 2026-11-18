@@ -13,6 +13,18 @@ const ACCEPT_SIGNATURE_CHALLENGE =
  * Change Bot Verifier: verifies RFC 9421 Ed25519 HTTP Message Signatures +
  * draft-ietf-webbotauth-httpsig-protocol-01 key discovery, (URL, keyid) binding,
  * covered request components, validity window, and bounded nonce replay cache.
+ *
+ * @param {{
+ *   directoryResolver: import('./directory.js').DirectoryResolver,
+ *   protectedBotUaTokens?: string[],
+ *   trustedDirectoryUrls?: string[] | null,
+ *   requireRequestTargetCoverage?: boolean,
+ *   requireNonce?: boolean,
+ *   maxValidityWindowSec?: number,
+ *   maxClockSkewSec?: number,
+ *   maxNonceEntries?: number,
+ *   nowSecFn?: () => number
+ * }} options
  */
 export function createWebBotAuthVerifier({
   directoryResolver,
@@ -175,8 +187,7 @@ export function createWebBotAuthVerifier({
 
         // Section 5.2 & 5.2.1: must cover @authority (or @target-uri) and "signature-agent";key="<label>"
         const compNames = new Set(entry.components.map((c) => c.name));
-        const coversAuthorityOrUri =
-          compNames.has('@authority') || compNames.has('@target-uri');
+        const coversAuthorityOrUri = compNames.has('@authority') || compNames.has('@target-uri');
         const coversAgentMember = entry.components.some(
           (c) =>
             c.name === 'signature-agent' &&

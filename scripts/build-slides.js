@@ -16,7 +16,7 @@ const CANDIDATE_BROWSERS = [
   '/usr/bin/chromium-browser',
   '/usr/bin/chromium',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-].filter(Boolean);
+].filter((p) => typeof p === 'string');
 
 const browserBin = CANDIDATE_BROWSERS.find((p) => fs.existsSync(p));
 if (!browserBin) {
@@ -27,13 +27,7 @@ if (!browserBin) {
 const fileUrl = pathToFileURL(HTML_PATH).href;
 execFileSync(
   browserBin,
-  [
-    '--headless',
-    '--disable-gpu',
-    '--no-pdf-header-footer',
-    `--print-to-pdf=${PDF_PATH}`,
-    fileUrl
-  ],
+  ['--headless', '--disable-gpu', '--no-pdf-header-footer', `--print-to-pdf=${PDF_PATH}`, fileUrl],
   { stdio: 'inherit' }
 );
 

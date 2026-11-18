@@ -34,7 +34,7 @@ function createWorkerRpc(workerPath) {
   let nextId = 1;
   const pending = new Map();
 
-  child.on('message', (msg) => {
+  child.on('message', (/** @type {any} */ msg) => {
     const entry = pending.get(msg.id);
     if (!entry) return;
     pending.delete(msg.id);
@@ -534,11 +534,7 @@ async function main() {
     `${JSON.stringify(summary, null, 2)}\n`,
     'utf8'
   );
-  await fs.writeFile(
-    path.join(RESULTS_DIR, 'measure-log.txt'),
-    `${logLines.join('\n')}\n`,
-    'utf8'
-  );
+  await fs.writeFile(path.join(RESULTS_DIR, 'measure-log.txt'), `${logLines.join('\n')}\n`, 'utf8');
 
   await originRpc.call('shutdown');
   await trustedDirServer.close();

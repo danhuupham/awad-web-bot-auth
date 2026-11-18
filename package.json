@@ -9,11 +9,21 @@
   },
   "scripts": {
     "measure": "node scripts/measure.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
     "verify:claims": "node scripts/verify-claims.js",
     "scan": "node scripts/scan-secrets.js",
     "build:slides": "node scripts/build-slides.js",
     "pack:submission": "node scripts/pack-submission.js",
-    "check": "npm test && npm run scan && npm run verify:claims"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run scan && npm run verify:claims"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.3"
   }
 }

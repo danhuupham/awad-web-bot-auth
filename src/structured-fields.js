@@ -306,10 +306,7 @@ export function parseSignatureInputHeader(rawHeader) {
     if (trimmed[i] !== ')') {
       throw new SyntaxError('Unterminated inner list in Signature-Input');
     }
-    const { params: signatureParams, nextPos: afterSigParams } = parseParametersAt(
-      trimmed,
-      i + 1
-    );
+    const { params: signatureParams, nextPos: afterSigParams } = parseParametersAt(trimmed, i + 1);
     i = skipOws(trimmed, afterSigParams);
 
     const paramMap = Object.create(null);

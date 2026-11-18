@@ -25,7 +25,9 @@ execSync('npm run check', { cwd: ROOT_DIR, stdio: 'inherit' });
 const selfAssess = fs.readFileSync(path.join(ROOT_DIR, 'SELF_ASSESSMENT_REPORT.md'), 'utf8');
 const match = /Total we claim:\s*(\d+)\s*\/\s*100/i.exec(selfAssess);
 if (!match) {
-  console.error('[BLOCKED] Could not parse "Total we claim: XX / 100" from SELF_ASSESSMENT_REPORT.md');
+  console.error(
+    '[BLOCKED] Could not parse "Total we claim: XX / 100" from SELF_ASSESSMENT_REPORT.md'
+  );
   process.exit(1);
 }
 
@@ -37,8 +39,10 @@ if (fs.existsSync(outZipPath)) {
   fs.unlinkSync(outZipPath);
 }
 
-// Use tar -a -c -f (built into Windows 10/11 & macOS/Linux bsdtar) so hidden .git directory is included cleanly
-execSync(`tar -a -c -f "${outZipPath}" -C "${ROOT_DIR}" .`, { stdio: 'inherit' });
+// Use tar -a -c -f (built into Windows 10/11 & macOS/Linux bsdtar) so hidden .git directory is included cleanly while excluding node_modules
+execSync(`tar -a -c -f "${outZipPath}" --exclude=node_modules -C "${ROOT_DIR}" .`, {
+  stdio: 'inherit'
+});
 
 const sizeKb = (fs.statSync(outZipPath).size / 1024).toFixed(1);
 console.log(`Packed submission archive (including .git): ${outZipPath} (${sizeKb} KB)`);

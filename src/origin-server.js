@@ -44,8 +44,14 @@ export async function startOriginServer({ tlsCredentials, verifier }) {
     res.end(okPayload);
   });
 
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address();
+  await new Promise((resolve) =>
+    server.listen({ port: 0, host: '127.0.0.1' }, () => resolve(null))
+  );
+  const addr = server.address();
+  if (!addr || typeof addr === 'string') {
+    throw new Error('Failed to bind origin server TCP port');
+  }
+  const { port } = addr;
 
   return {
     port,

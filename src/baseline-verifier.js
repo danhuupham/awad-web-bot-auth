@@ -70,7 +70,7 @@ export function createBaselineIpUaVerifier({
       const ipUint = ipv4ToUint32(clientIp);
       const inRange =
         ipUint !== null &&
-        matchedRule.ranges.some((range) => ((ipUint & range.mask) >>> 0) === range.network);
+        matchedRule.ranges.some((range) => (ipUint & range.mask) >>> 0 === range.network);
 
       if (!inRange) {
         return {

@@ -5,7 +5,7 @@
 
 ## Research Question
 
-> *Compared with User-Agent and IP allowlist checks, what percentage of spoofed bot requests (%) does RFC 9421 HTTP Message Signature verification (Ed25519) reject on a 1,000-request mixed workload while accepting valid signed bots, and how much p95 verification latency (ms) and CPU overhead (%) does it add per request?*
+> _Compared with User-Agent and IP allowlist checks, what percentage of spoofed bot requests (%) does RFC 9421 HTTP Message Signature verification (Ed25519) reject on a 1,000-request mixed workload while accepting valid signed bots, and how much p95 verification latency (ms) and CPU overhead (%) does it add per request?_
 
 ---
 
@@ -21,11 +21,12 @@
 ```bash
 git clone https://github.com/danhuupham/awad-web-bot-auth.git
 cd awad-web-bot-auth
-npm test
+npm ci
+npm run check
 npm run measure
 ```
 
-*(Running `npm install` is optional and completes immediately because `package.json` declares zero third-party packages.)*
+_(Because runtime `dependencies` are empty, `npm test` and `npm run measure` can also run directly without `npm ci` in offline environments; `npm ci` installs the pinned quality-gate toolchain: Prettier, ESLint, and TypeScript.)_
 
 ### What `npm run measure` Does
 
@@ -38,14 +39,17 @@ npm run measure
    - `results/summary.json` — aggregated median, IQR (`p75 - p25`), `p25`, `p75`, `min`, and `max` across all 7 runs.
    - `results/measure-log.txt` — exact stdout table printed by `npm run measure`.
 
-### Additional Quality Gate Commands
+### Quality Gate Commands (See [`AGENTS.md`](AGENTS.md))
 
-| Command | Purpose |
-| --- | --- |
-| `npm test` | Runs 10 unit, official IETF Appendix E.2 test-vector, SSRF/cache security, and HTTPS integration tests |
-| `npm run verify:claims` | Verifies every headline metric in `REPORT.md` and `slides/slides.html` matches `results/summary.json` |
-| `npm run scan` | Scans working tree and `git log -p --all` to ensure zero private keys or secrets are committed |
-| `npm run check` | Runs `npm test && npm run scan && npm run verify:claims` |
+| Command                                   | Purpose                                                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `npm run format` / `npm run format:check` | Formats or checks formatting with Prettier 3 (`results/` and `slides.pdf` excluded)                        |
+| `npm run lint`                            | Runs ESLint 9 across `src/`, `test/`, and `scripts/`                                                       |
+| `npm run typecheck`                       | Runs TypeScript `tsc --noEmit` (`checkJs: true`, `strict: true`)                                           |
+| `npm test`                                | Runs 10 unit, official IETF Appendix E.2 test-vector, SSRF/cache security, and HTTPS integration tests     |
+| `npm run verify:claims`                   | Verifies every headline metric in `REPORT.md` and `slides/slides.html` matches `results/summary.json`      |
+| `npm run scan`                            | Scans working tree and `git log -p --all` to ensure zero private keys or secrets are committed             |
+| `npm run check`                           | Runs all six synchronous gates (`format:check` → `lint` → `typecheck` → `test` → `scan` → `verify:claims`) |
 
 ---
 

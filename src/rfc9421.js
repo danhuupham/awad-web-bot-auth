@@ -12,9 +12,7 @@ import {
  * RFC 9421 Appendix B.1.4 example Ed25519 key thumbprint.
  * Rejected by default in verifiers per draft-ietf-webbotauth-httpsig-protocol-01 Section 6.8.
  */
-export const KNOWN_TEST_KEY_THUMBPRINTS = new Set([
-  'poqkLGiymh_W0uP6PZFw-dvez3QJT5SolqXBCW38r0U'
-]);
+export const KNOWN_TEST_KEY_THUMBPRINTS = new Set(['poqkLGiymh_W0uP6PZFw-dvez3QJT5SolqXBCW38r0U']);
 
 /**
  * Computes RFC 7638 / RFC 8037 Appendix A.3 base64url JWK SHA-256 Thumbprint for Ed25519 OKP keys.
@@ -249,12 +247,7 @@ export function verifySignatureBaseWithKey({ message, entry, signatureBytes, pub
     components: entry.components,
     serializedParams: entry.serializedParams
   });
-  const ok = crypto.verify(
-    null,
-    Buffer.from(signatureBase, 'utf8'),
-    publicKey,
-    signatureBytes
-  );
+  const ok = crypto.verify(null, Buffer.from(signatureBase, 'utf8'), publicKey, signatureBytes);
   return { ok, signatureBase };
 }
 
