@@ -12,7 +12,7 @@ Repository: https://github.com/danhuupham/awad-web-bot-auth
 
 All measurements were recorded locally against self-owned Node.js HTTPS services (`results/summary.json`, `results/run-01.json`–`run-07.json`):
 
-- **Machine & Runtime:** AMD Ryzen 7 4800H (16 logical cores), 31.42 GB RAM, Windows 11 x64 (`win32 10.0.26300`), Node.js `v26.13.1` built-in `node:crypto`, `node:https`, and `node:perf_hooks` (verified compatible with Node.js `22.x` LTS in GitHub Actions CI).
+- **Machine & Runtime:** AMD Ryzen 7 4800H (16 logical cores), 31.42 GB RAM, Windows 11 x64 (`win32 10.0.26300`), Node.js `v26.13.1` Active LTS ("Lithium", released 10 Nov 2026) built-in `node:crypto`, `node:https`, and `node:perf_hooks` (verified in GitHub Actions CI on Ubuntu Node 26 LTS).
 - **Held Fixed Across Baseline and Change:**
   1. **Origin Server Process & Transport:** One isolated child worker process (`src/origin-worker.js`) serving a fixed 1 KB JSON payload over TLS 1.3 (`127.0.0.1`), using an identical keep-alive client pool (`concurrency = 16`, `maxSockets = 16`, pre-warmed on `/__warmup_socket` before each measurement window). Isolating the origin in a separate OS process keeps client TLS generation and directory serving out of origin CPU metrics.
   2. **Deterministic 1,000-Request Mixed Workload (`seed = 20261118`):** Identical URLs, headers, and arrival order:
@@ -72,4 +72,4 @@ Pairwise deltas (`Change − Baseline`) are computed within each run before taki
 6. I. Liusvaara, **RFC 8037: _CFRG ECDH and Signatures in JOSE_** (Appendix A.3: Ed25519 JWK Thumbprint), IETF Proposed Standard, Jan 2017. <https://www.rfc-editor.org/rfc/rfc8037> (accessed 2026-11-18).
 7. R. Polli, L. Pardue, **RFC 9530: _Digest Fields_**, IETF Proposed Standard, Feb 2024. <https://www.rfc-editor.org/rfc/rfc9530> (accessed 2026-11-18).
 8. Cloudflare Research, **`web-bot-auth` npm package `v0.2.0`** (modified 31 Aug 2026) & repository <https://github.com/cloudflare/web-bot-auth> (accessed 2026-11-18).
-9. Node.js Documentation, **`node:crypto` & `node:perf_hooks` (`eventLoopUtilization`)**, Node.js `v26.13.1` / `v22.x` LTS. <https://nodejs.org/api/crypto.html>, <https://nodejs.org/api/perf_hooks.html> (accessed 2026-11-18).
+9. Node.js Documentation, **`node:crypto` & `node:perf_hooks` (`eventLoopUtilization`)**, Node.js `v26.13.1` Active LTS ("Lithium", 10 Nov 2026). <https://nodejs.org/api/crypto.html>, <https://nodejs.org/api/perf_hooks.html> (accessed 2026-11-18).

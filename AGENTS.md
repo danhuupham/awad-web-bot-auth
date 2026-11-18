@@ -2,7 +2,7 @@
 
 ## Stack
 
-- Node.js `>=22.0.0` (ESM, built-in `node:crypto`, `node:https`, `node:perf_hooks`, `node:child_process`, `node:test`), ESLint 9, Prettier 3, TypeScript 5 (`tsc --noEmit`).
+- Node.js `>=22.13.0` (`v26.13.1` Active LTS "Lithium", ESM, built-in `node:crypto`, `node:https`, `node:perf_hooks`, `node:child_process`, `node:test`), ESLint 10, Prettier 3.10, TypeScript 7 (`tsc --noEmit`).
 - Zero runtime `dependencies` and `$0.00` external API cost: `npm test` and `npm run measure` run 100% offline over loopback TLS 1.3 (`127.0.0.1`).
 
 ## Commands

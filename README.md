@@ -13,7 +13,7 @@
 
 ### Prerequisites
 
-- **Node.js `>= 22.0.0`** (tested on Node `v22.x` LTS on Ubuntu Linux and Node `v26.13.1` on Windows 11 x64).
+- **Node.js `>= 22.13.0`** (measured on Node **`v26.13.1` Active LTS "Lithium"** on Windows 11 x64 and verified in CI on Ubuntu Linux Node 26 LTS).
 - **Zero external npm dependencies, zero API keys, and zero network calls outside `127.0.0.1`:** all Ed25519 cryptography, ephemeral TLS 1.3 X.509 certificates, HTTP Structured Field parsing, and benchmarking use Node.js built-in modules (`node:crypto`, `node:https`, `node:perf_hooks`, `node:child_process`, `node:test`).
 
 ### Step-by-Step Reproduction
@@ -43,9 +43,9 @@ _(Because runtime `dependencies` are empty, `npm test` and `npm run measure` can
 
 | Command                                   | Purpose                                                                                                    |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `npm run format` / `npm run format:check` | Formats or checks formatting with Prettier 3 (`results/` and `slides.pdf` excluded)                        |
-| `npm run lint`                            | Runs ESLint 9 across `src/`, `test/`, and `scripts/`                                                       |
-| `npm run typecheck`                       | Runs TypeScript `tsc --noEmit` (`checkJs: true`, `strict: true`)                                           |
+| `npm run format` / `npm run format:check` | Formats or checks formatting with Prettier `3.10` (`results/` and `slides.pdf` excluded)                   |
+| `npm run lint`                            | Runs ESLint `10` across `src/`, `test/`, and `scripts/`                                                    |
+| `npm run typecheck`                       | Runs TypeScript `7` `tsc --noEmit` (`checkJs: true`, `strict: true`)                                       |
 | `npm test`                                | Runs 10 unit, official IETF Appendix E.2 test-vector, SSRF/cache security, and HTTPS integration tests     |
 | `npm run verify:claims`                   | Verifies every headline metric in `REPORT.md` and `slides/slides.html` matches `results/summary.json`      |
 | `npm run scan`                            | Scans working tree and `git log -p --all` to ensure zero private keys or secrets are committed             |

@@ -4,13 +4,28 @@ import { DirectoryResolver } from './directory.js';
 import { startOriginServer } from './origin-server.js';
 import { createWebBotAuthVerifier } from './webbotauth-verifier.js';
 
+/**
+ * @typedef {{
+ *   name: string,
+ *   resetState: () => void,
+ *   verifyRequest: (req: any) => Promise<any>
+ * }} BotVerifier
+ */
+
+/** @type {DirectoryResolver | null} */
 let resolver = null;
+/** @type {BotVerifier | null} */
 let baselineVerifier = null;
+/** @type {BotVerifier | null} */
 let changeVerifier = null;
+/** @type {BotVerifier | null} */
 let activeVerifier = null;
+/** @type {Awaited<ReturnType<typeof startOriginServer>> | null} */
 let originServer = null;
-let cpuSnapshot = null;
-let eluSnapshot = null;
+/** @type {NodeJS.CpuUsage | undefined} */
+let cpuSnapshot;
+/** @type {import('node:perf_hooks').EventLoopUtilization | undefined} */
+let eluSnapshot;
 let wallStartNs = 0n;
 
 const delegatingVerifier = {
@@ -25,6 +40,9 @@ const delegatingVerifier = {
         headers: {}
       };
     }
+    if (!activeVerifier) {
+      throw new Error('Origin worker verifier not initialized');
+    }
     return activeVerifier.verifyRequest(req);
   }
 };
@@ -32,33 +50,37 @@ const delegatingVerifier = {
 process.on('message', async (/** @type {any} */ msg) => {
   try {
     if (msg.type === 'init') {
-      resolver = new DirectoryResolver({
+      const nextResolver = new DirectoryResolver({
         caCertPem: msg.tlsCredentials.cert,
         allowLoopbackForLocalStudy: true
       });
-      baselineVerifier = createBaselineIpUaVerifier();
-      changeVerifier = createWebBotAuthVerifier({
-        directoryResolver: resolver,
+      const nextBaseline = createBaselineIpUaVerifier();
+      const nextChange = createWebBotAuthVerifier({
+        directoryResolver: nextResolver,
         trustedDirectoryUrls: msg.trustedDirectoryUrls
       });
-      activeVerifier = baselineVerifier;
-      originServer = await startOriginServer({
+      const srv = await startOriginServer({
         tlsCredentials: msg.tlsCredentials,
         verifier: delegatingVerifier
       });
+      resolver = nextResolver;
+      baselineVerifier = nextBaseline;
+      changeVerifier = nextChange;
+      activeVerifier = nextBaseline;
+      originServer = srv;
       process.send?.({
         id: msg.id,
         ok: true,
-        port: originServer.port,
-        authority: originServer.authority,
-        baseUrl: originServer.baseUrl
+        port: srv.port,
+        authority: srv.authority,
+        baseUrl: srv.baseUrl
       });
       return;
     }
 
     if (msg.type === 'prepare-mode') {
       activeVerifier = msg.mode === 'change' ? changeVerifier : baselineVerifier;
-      activeVerifier.resetState();
+      activeVerifier?.resetState();
       process.send?.({ id: msg.id, ok: true });
       return;
     }
@@ -93,9 +115,9 @@ process.on('message', async (/** @type {any} */ msg) => {
           wallMs
         },
         resolverStats: {
-          cacheHits: resolver.stats.cacheHits,
-          networkFetches: resolver.stats.networkFetches,
-          coldFetchDurationsMs: resolver.stats.coldFetchDurationsMs
+          cacheHits: resolver?.stats.cacheHits ?? 0,
+          networkFetches: resolver?.stats.networkFetches ?? 0,
+          coldFetchDurationsMs: resolver?.stats.coldFetchDurationsMs ?? []
         }
       });
       return;

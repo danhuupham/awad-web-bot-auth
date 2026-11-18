@@ -74,15 +74,18 @@ Kept:
 
 ---
 
-## Entry 5 · 2026-11-18 — Adding `AGENTS.md` project rules and the full Format → Lint → Typecheck quality-gate harness
+## Entry 5 · 2026-11-18 — Adding `AGENTS.md` project rules and upgrading outdated devDependencies & CI actions
 
 Tool: Antigravity (Gemini)
-Asked for: Add `AGENTS.md`, Prettier, ESLint, and TypeScript (`tsc --noEmit`) quality gates matching the course harness conventions, and wire them into `npm run check` and `.github/workflows/ci.yml`.
+Asked for: Add `AGENTS.md`, Prettier, ESLint, and TypeScript (`tsc --noEmit`) quality gates matching the course harness conventions, and upgrade all devDependencies and GitHub Actions to current November 2026 releases.
 Kept:
 
-- `AGENTS.md` (30 lines covering **Stack**, **Commands**, **Conventions**, **Never**, and **Permissions**), `.prettierrc.json`, `.prettierignore` (protecting raw `results/` logs from reformatting), `eslint.config.js`, `tsconfig.json` (`checkJs: true`, `strict: true`), and `.github/workflows/ci.yml` (`npm ci` + `npm audit --audit-level=high` + `npm run check`).
+- `AGENTS.md` (30 lines covering **Stack**, **Commands**, **Conventions**, **Never**, and **Permissions**), `.prettierrc.json`, `.prettierignore` (protecting raw `results/` logs from reformatting), `eslint.config.js`, and `tsconfig.json` (`checkJs: true`, `strict: true`).
   Changed:
+
 - Updated `scripts/pack-submission.js` to pass `--exclude=node_modules` to `tar` so installing `devDependencies` locally never bloats the final `<StudentIDs>_<total>.zip` archive while still including `.git` and `package-lock.json`.
+- Upgraded `devDependencies` to current releases (`eslint@^10.15.0`, `prettier@^3.10.1`, `typescript@^7.0.2`, `@types/node@^26.6.6`) and `.github/workflows/ci.yml` to `actions/checkout@v7` and `actions/setup-node@v7` on Node.js `26` Active LTS ("Lithium").
   Rejected:
-- Rejected letting Prettier format `results/*.json` (`results/` added to `.prettierignore`) so raw outputs written by `npm run measure` remain untouched.
-  By hand: Ran `npm run format` → `npm run lint` → `npm run typecheck` → `npm test` → `npm run scan` → `npm run verify:claims` in strict order before committing.
+
+- **Rejected assistant's outdated initial toolchain pins (`dc2eafd`):** The assistant initially copied older version ranges (`eslint@^9.17.0`, `prettier@^3.4.0`, `typescript@^5.7.3`, `@types/node@^22.13.0`, and `actions/checkout@v4` / `actions/setup-node@v4`), triggering `npm warn deprecated eslint@9.39.5` locally and GitHub Actions Node 20 runner deprecation warnings on CI Run `44260319095`. We caught the stale versions, queried `npm view` and GitHub releases directly, and replaced them with ESLint 10, Prettier 3.10, TypeScript 7, `@types/node` 26, and `@v7` GitHub Actions.
+  By hand: Audited npm deprecation and CI runner annotations, ran `npm run format` → `npm run lint` → `npm run typecheck` → `npm test` → `npm run scan` → `npm run verify:claims` in strict order, and verified CI green on GitHub.
